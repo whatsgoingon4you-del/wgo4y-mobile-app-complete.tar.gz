@@ -513,6 +513,123 @@ async def get_my_rsvps(current_user: dict = Depends(get_current_user)):
     
     return result
 
+
+# ==================== VENUES ENDPOINTS ====================
+
+@api_router.post("/venues", response_model=Venue)
+async def create_venue(venue_data: VenueCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new venue (Business/Venue only)"""
+    if current_user['role'] not in ['business/venue']:
+        raise HTTPException(status_code=403, detail="Only business/venue accounts can create venues")
+    
+    # Create venue object
+    venue = Venue(
+        **venue_data.model_dump(),
+        business_id=current_user['sub']
+    )
+    
+    # Save to database
+    venue_dict = serialize_datetime(venue.model_dump())
+    await db.venues.insert_one(venue_dict)
+    
+    logger.info(f"Venue created: {venue.name} by user {current_user['sub']}")
+    
+    return venue
+
+@api_router.get("/venues", response_model=List[Venue])
+async def get_venues(
+    venue_type: Optional[str] = None,
+    search: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 50
+):
+    """Get all venues with optional filtering"""
+    query = {}
+    
+    if venue_type:
+        query['venue_type'] = venue_type
+    
+    if search:
+        query['$or'] = [
+            {'name': {'$regex': search, '$options': 'i'}},
+            {'description': {'$regex': search, '$options': 'i'}},
+            {'address': {'$regex': search, '$options': 'i'}}
+        ]
+    
+    venues = await db.venues.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    
+    return [deserialize_datetime(venue) for venue in venues]
+
+@api_router.get("/venues/{venue_id}", response_model=Venue)
+async def get_venue(venue_id: str):
+    """Get a specific venue"""
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    
+    return deserialize_datetime(venue)
+
+@api_router.put("/venues/{venue_id}", response_model=Venue)
+async def update_venue(venue_id: str, updates: dict, current_user: dict = Depends(get_current_user)):
+    """Update a venue (owner only)"""
+    # Check if venue exists and user is owner
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    
+    if venue['business_id'] != current_user['sub']:
+        raise HTTPException(status_code=403, detail="You can only update your own venues")
+    
+    # Remove fields that shouldn't be updated
+    disallowed_fields = ['id', 'business_id', 'created_at']
+    for field in disallowed_fields:
+        updates.pop(field, None)
+    
+    if not updates:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    # Serialize datetime fields
+    updates = serialize_datetime(updates)
+    
+    result = await db.venues.update_one(
+        {"id": venue_id},
+        {"$set": updates}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    
+    updated_venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    return deserialize_datetime(updated_venue)
+
+@api_router.delete("/venues/{venue_id}")
+async def delete_venue(venue_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a venue (owner only)"""
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    
+    if venue['business_id'] != current_user['sub']:
+        raise HTTPException(status_code=403, detail="You can only delete your own venues")
+    
+    # Delete venue
+    await db.venues.delete_one({"id": venue_id})
+    
+    return {"message": "Venue deleted successfully"}
+
+@api_router.get("/venues/my/created", response_model=List[Venue])
+async def get_my_venues(current_user: dict = Depends(get_current_user)):
+    """Get venues created by current user"""
+    if current_user['role'] not in ['business/venue']:
+        raise HTTPException(status_code=403, detail="Only business/venue accounts can view created venues")
+    
+    venues = await db.venues.find(
+        {"business_id": current_user['sub']},
+        {"_id": 0}
+    ).to_list(100)
+    
+    return [deserialize_datetime(venue) for venue in venues]
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
