@@ -164,9 +164,9 @@ const Onboarding = () => {
 
               <div className="space-y-4">
                 <div className="flex justify-center">
-                  {photoUrl ? (
+                  {(previewUrl || photoUrl) ? (
                     <img 
-                      src={photoUrl} 
+                      src={previewUrl || photoUrl} 
                       alt="Profile preview"
                       className="w-32 h-32 rounded-full object-cover border-4 border-purple-200"
                       onError={(e) => {
@@ -180,17 +180,59 @@ const Onboarding = () => {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="photo_url">Photo URL</Label>
-                  <Input
-                    id="photo_url"
-                    data-testid="photo-url-input"
-                    placeholder="https://example.com/your-photo.jpg"
-                    value={photoUrl}
-                    onChange={(e) => setPhotoUrl(e.target.value)}
-                  />
-                  <p className="text-xs text-gray-500">Enter a direct link to your profile picture</p>
+                {/* Upload Method Toggle */}
+                <div className="flex gap-2 justify-center">
+                  <Button
+                    type="button"
+                    variant={uploadMethod === 'upload' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setUploadMethod('upload')}
+                    data-testid="upload-method-btn"
+                  >
+                    Upload File
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={uploadMethod === 'url' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setUploadMethod('url')}
+                    data-testid="url-method-btn"
+                  >
+                    Use URL
+                  </Button>
                 </div>
+
+                {uploadMethod === 'upload' ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="file_upload">Choose Photo</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="file_upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        data-testid="file-input"
+                        className="flex-1"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">Upload JPEG, PNG, GIF, or WebP (max 5MB)</p>
+                    {selectedFile && (
+                      <p className="text-xs text-green-600">✓ {selectedFile.name} selected</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="photo_url">Photo URL</Label>
+                    <Input
+                      id="photo_url"
+                      data-testid="photo-url-input"
+                      placeholder="https://example.com/your-photo.jpg"
+                      value={photoUrl}
+                      onChange={(e) => setPhotoUrl(e.target.value)}
+                    />
+                    <p className="text-xs text-gray-500">Enter a direct link to your profile picture</p>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-4">
