@@ -112,37 +112,119 @@ const Profile = () => {
         </Button>
 
         <div className="max-w-2xl mx-auto">
-          <Card>
+          <Card data-testid="profile-card">
             <CardHeader>
-              <div className="flex justify-center mb-4">
-                <Logo className="h-20 opacity-50" />
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-3xl">Profile</CardTitle>
+                <Button 
+                  variant={isEditing ? "outline" : "default"}
+                  onClick={handleEditToggle}
+                  data-testid="edit-toggle-btn"
+                >
+                  {isEditing ? 'Cancel' : 'Edit Profile'}
+                </Button>
               </div>
-              <CardTitle className="text-3xl text-center">Profile</CardTitle>
             </CardHeader>
-            <CardContent className="text-center py-12">
-              <div className="space-y-4">
-                <div className="inline-block px-6 py-3 bg-purple-50 rounded-lg">
-                  <p className="text-lg">
-                    <span className="font-semibold">{user?.full_name}</span>
-                  </p>
-                  <p className="text-purple-600">@{user?.username}</p>
-                  <p className="text-sm text-gray-600 mt-2">{user?.email}</p>
-                </div>
-                
-                <div className="pt-6">
-                  <p className="text-gray-600 mb-2">Role: <span className="font-semibold capitalize">{user?.role?.replace('/', ' / ')}</span></p>
-                  <p className="text-gray-600">Tier: <span className="font-semibold capitalize">{user?.tier}</span></p>
-                </div>
+            <CardContent>
+              {message.text && (
+                <Alert variant={message.type === 'error' ? 'destructive' : 'default'} className="mb-6">
+                  <AlertDescription>{message.text}</AlertDescription>
+                </Alert>
+              )}
 
-                <div className="pt-8">
-                  <div className="inline-flex items-center space-x-2 text-yellow-600 bg-yellow-50 px-4 py-2 rounded-lg">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Full profile management coming soon</span>
+              {isEditing ? (
+                <form onSubmit={handleSubmit} className="space-y-6" data-testid="edit-profile-form">
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <Input
+                      id="full_name"
+                      data-testid="full-name-input"
+                      value={formData.full_name}
+                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      data-testid="username-input"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') })}
+                      required
+                    />
+                    <p className="text-xs text-gray-500">Letters, numbers, and underscores only</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      data-testid="email-input"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Role (cannot be changed)</Label>
+                    <Input
+                      value={user?.role?.replace('/', ' / ')}
+                      disabled
+                      className="bg-gray-50 capitalize"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Tier (cannot be changed)</Label>
+                    <Input
+                      value={user?.tier}
+                      disabled
+                      className="bg-gray-50 capitalize"
+                    />
+                    <p className="text-xs text-gray-500">Contact support to upgrade your tier</p>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={loading}
+                    data-testid="save-btn"
+                  >
+                    {loading ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </form>
+              ) : (
+                <div className="space-y-6" data-testid="profile-view">
+                  <div className="text-center py-6">
+                    <div className="inline-block px-8 py-4 bg-purple-50 rounded-lg">
+                      <p className="text-2xl font-semibold mb-2">{user?.full_name}</p>
+                      <p className="text-xl text-purple-600 mb-3">@{user?.username}</p>
+                      <p className="text-gray-600">{user?.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-6 border-t">
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <p className="text-sm text-gray-600 mb-1">Role</p>
+                      <p className="font-semibold capitalize">{user?.role?.replace('/', ' / ')}</p>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <p className="text-sm text-gray-600 mb-1">Tier</p>
+                      <p className="font-semibold capitalize">{user?.tier}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800">
+                      <strong>Note:</strong> After updating your profile, you'll need to log in again to see the changes reflected throughout the app.
+                    </p>
                   </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
