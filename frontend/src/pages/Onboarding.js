@@ -1,0 +1,224 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import axios from 'axios';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import Logo from '@/components/Logo';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const Onboarding = () => {
+  const navigate = useNavigate();
+  const { user, token, refreshUser } = useAuth();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState('');
+
+  const totalSteps = 2;
+  const progress = (step / totalSteps) * 100;
+
+  const handleSkipPhoto = () => {
+    setStep(2);
+  };
+
+  const handleSavePhoto = async () => {
+    if (!photoUrl) {
+      setStep(2);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.put(
+        `${API}/users/profile`,
+        { photo_url: photoUrl },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      await refreshUser();
+      setStep(2);
+    } catch (error) {
+      console.error('Failed to save photo:', error);
+      setStep(2); // Continue anyway
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteOnboarding = async () => {
+    setLoading(true);
+    try {
+      await axios.put(
+        `${API}/users/profile`,
+        { onboarding_completed: true },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      await refreshUser();
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Failed to complete onboarding:', error);
+      navigate('/dashboard'); // Navigate anyway
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getRoleSpecificMessage = () => {
+    switch (user?.role) {
+      case 'business/venue':
+        return {
+          title: "Ready to create events and post jobs!",
+          suggestions: [
+            "Create your first event to attract attendees",
+            "Add your venue to help people find you",
+            "Post job opportunities to find talent"
+          ]
+        };
+      case 'entrepreneur/worker':
+        return {
+          title: "Let's showcase your talents!",
+          suggestions: [
+            "Browse events and RSVP to network",
+            "Find job opportunities that match your skills",
+            "Complete your profile to stand out"
+          ]
+        };
+      default:
+        return {
+          title: "Welcome to WGO4Y!",
+          suggestions: [
+            "Discover exciting events in your area",
+            "Explore venues and entertainment options",
+            "Connect with the community"
+          ]
+        };
+    }
+  };
+
+  const roleMessage = getRoleSpecificMessage();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl" data-testid="onboarding-card">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <Logo className="h-16" />
+          </div>
+          <CardTitle className="text-3xl">Welcome to WGO4Y!</CardTitle>
+          <CardDescription>Let's get your profile set up</CardDescription>
+          <div className="mt-6">
+            <Progress value={progress} className="h-2" />
+            <p className="text-sm text-gray-600 mt-2">Step {step} of {totalSteps}</p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {step === 1 && (
+            <div className="space-y-6" data-testid="step-photo">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-2">Add Your Profile Picture</h3>
+                <p className="text-gray-600">Help others recognize you (optional)</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  {photoUrl ? (
+                    <img 
+                      src={photoUrl} 
+                      alt="Profile preview"
+                      className="w-32 h-32 rounded-full object-cover border-4 border-purple-200"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center text-white text-5xl font-bold">
+                      {user?.full_name?.charAt(0) || user?.username?.charAt(0) || '?'}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="photo_url">Photo URL</Label>
+                  <Input
+                    id="photo_url"
+                    data-testid="photo-url-input"
+                    placeholder="https://example.com/your-photo.jpg"
+                    value={photoUrl}
+                    onChange={(e) => setPhotoUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500">Enter a direct link to your profile picture</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSkipPhoto}
+                  className="flex-1"
+                  data-testid="skip-photo-btn"
+                >
+                  Skip for Now
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSavePhoto}
+                  disabled={loading}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600"
+                  data-testid="save-photo-btn"
+                >
+                  {loading ? 'Saving...' : 'Continue'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-6" data-testid="step-complete">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-semibold mb-2">{roleMessage.title}</h3>
+                <p className="text-gray-600 mb-6">Here's what you can do next:</p>
+              </div>
+
+              <div className="bg-purple-50 rounded-lg p-6 space-y-3">
+                {roleMessage.suggestions.map((suggestion, index) => (
+                  <div key={index} className="flex items-start">
+                    <svg className="w-5 h-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-gray-700">{suggestion}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  <strong>Tip:</strong> You can always update your profile, add more details, or upload a new photo anytime from the Profile page.
+                </p>
+              </div>
+
+              <Button
+                onClick={handleCompleteOnboarding}
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-lg py-6"
+                data-testid="complete-onboarding-btn"
+              >
+                {loading ? 'Loading...' : 'Get Started!'}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default Onboarding;
