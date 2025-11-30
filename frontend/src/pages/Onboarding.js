@@ -108,13 +108,15 @@ const Onboarding = () => {
     
     try {
       console.log('Updating onboarding_completed to true...');
-      const response = await axios.put(
-        `${API}/users/profile`,
-        { onboarding_completed: true },
+      const response = await axios.post(
+        `${API}/auth/complete-onboarding`,
+        {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
       console.log('✓ Onboarding update response:', response.data);
+      console.log('  - Success:', response.data.success);
+      console.log('  - User onboarding_completed:', response.data.user?.onboarding_completed);
       
       // Immediately fetch fresh user data to verify
       console.log('Fetching fresh user data...');
