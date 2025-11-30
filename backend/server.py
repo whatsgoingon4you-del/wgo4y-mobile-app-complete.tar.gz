@@ -3407,6 +3407,181 @@ async def update_job_status(
     
     return {'message': f'Job status updated to {status}'}
 
+
+@api_router.get("/jobs/{job_id}/applicants")
+async def get_job_applicants(
+    job_id: str,
+    user: Dict = Depends(get_current_user)
+):
+    """Get all applicants for a job (owner only)"""
+    # Check if job exists and user is owner
+    job = await db.job_postings.find_one({'_id': job_id})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job['owner_id'] != user['_id']:
+        raise HTTPException(status_code=403, detail="You can only view applicants for your own jobs")
+    
+    # Get all applications for this job
+    applications = []
+    async for app in db.job_applications.find({'job_id': job_id}).sort('created_at', -1):
+        # Get worker profile details
+        worker_profile = await db.worker_profiles.find_one({'_id': app['worker_profile_id']})
+        worker = await db.users.find_one({'_id': app['worker_id']})
+        
+        if worker_profile and worker:
+            applications.append({
+                'id': app['_id'],
+                'job_id': app['job_id'],
+                'worker_id': app['worker_id'],
+                'worker_name': worker_profile.get('stage_name') or worker.get('full_name') or worker.get('username'),
+                'worker_role': worker_profile.get('role'),
+                'worker_services': worker_profile.get('services', []),
+                'note': app.get('note', ''),
+                'status': app['status'],
+                'created_at': app['created_at'].isoformat(),
+                'worker_profile': {
+                    'stage_name': worker_profile.get('stage_name'),
+                    'role': worker_profile.get('role'),
+                    'services': worker_profile.get('services', []),
+                    'experience': worker_profile.get('experience'),
+                    'location': worker_profile.get('location'),
+                    'photo_url': worker_profile.get('photo_url')
+                }
+            })
+    
+    return {
+        'job': {
+            'id': job['_id'],
+            'title': job['title'],
+            'role': job['role'],
+            'status': job['status']
+        },
+        'applicants': applications,
+        'total_count': len(applications)
+    }
+
+@api_router.get("/jobs/my/posted")
+async def get_my_posted_jobs(
+    user: Dict = Depends(get_current_user)
+):
+    """Get all jobs posted by current user"""
+    if user.get('user_type') not in ['business', 'entrepreneur']:
+        raise HTTPException(status_code=403, detail="Only businesses and entrepreneurs can view posted jobs")
+    
+    jobs = []
+    async for job in db.job_postings.find({'owner_id': user['_id']}).sort('created_at', -1):
+        # Count applications for each job
+        app_count = await db.job_applications.count_documents({'job_id': job['_id']})
+        
+        jobs.append({
+            'id': job['_id'],
+            'title': job['title'],
+            'role': job['role'],
+            'date': job['date'].isoformat() if isinstance(job.get('date'), datetime) else job.get('date'),
+            'location': job['location'],
+            'description': job['description'],
+            'pay': job.get('pay'),
+            'status': job['status'],
+            'applicant_count': app_count,
+            'created_at': job['created_at'].isoformat(),
+            'updated_at': job['updated_at'].isoformat()
+        })
+    
+    return {
+        'jobs': jobs,
+        'total_count': len(jobs)
+    }
+
+@api_router.get("/jobs/my/applications")
+async def get_my_applications(
+    user: Dict = Depends(get_current_user)
+):
+    """Get all job applications submitted by current user"""
+    # Check if user has worker profile
+    worker_profile = await db.worker_profiles.find_one({'user_id': user['_id']})
+    if not worker_profile:
+        return {'applications': [], 'total_count': 0}
+    
+    applications = []
+    async for app in db.job_applications.find({'worker_id': user['_id']}).sort('created_at', -1):
+        # Get job details
+        job = await db.job_postings.find_one({'_id': app['job_id']})
+        if job:
+            applications.append({
+                'id': app['_id'],
+                'job': {
+                    'id': job['_id'],
+                    'title': job['title'],
+                    'role': job['role'],
+                    'owner_name': job['owner_name'],
+                    'location': job['location'],
+                    'date': job['date'].isoformat() if isinstance(job.get('date'), datetime) else job.get('date'),
+                    'pay': job.get('pay'),
+                    'status': job['status']
+                },
+                'note': app.get('note', ''),
+                'status': app['status'],
+                'created_at': app['created_at'].isoformat()
+            })
+    
+    return {
+        'applications': applications,
+        'total_count': len(applications)
+    }
+
+@api_router.patch("/jobs/applications/{application_id}/status")
+async def update_application_status(
+    application_id: str,
+    status: str,
+    user: Dict = Depends(get_current_user)
+):
+    """Update application status (job owner only)"""
+    if status not in ['pending', 'accepted', 'rejected']:
+        raise HTTPException(status_code=400, detail="Invalid status. Must be: pending, accepted, or rejected")
+    
+    # Get application
+    application = await db.job_applications.find_one({'_id': application_id})
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    # Check if user owns the job
+    job = await db.job_postings.find_one({'_id': application['job_id']})
+    if not job or job['owner_id'] != user['_id']:
+        raise HTTPException(status_code=403, detail="You can only update applications for your own jobs")
+    
+    # Update status
+    await db.job_applications.update_one(
+        {'_id': application_id},
+        {'$set': {'status': status}}
+    )
+    
+    # Notify worker
+    import uuid
+    notif_id = str(uuid.uuid4())
+    status_message = {
+        'accepted': 'Your application has been accepted!',
+        'rejected': 'Your application was not selected this time.',
+        'pending': 'Your application status has been updated.'
+    }
+    
+    await db.notifications.insert_one({
+        '_id': notif_id,
+        'user_id': application['worker_id'],
+        'type': 'JOB_APPLICATION_UPDATE',
+        'job_id': application['job_id'],
+        'title': f"Application Update: {job['title']}",
+        'message': status_message.get(status, 'Your application status has changed.'),
+        'is_read': False,
+        'created_at': datetime.utcnow()
+    })
+    
+    return {
+        'message': f'Application status updated to {status}',
+        'application_id': application_id,
+        'new_status': status
+    }
+
 # ============= NOTIFICATION ROUTES =============
 
 @api_router.get("/notifications")
