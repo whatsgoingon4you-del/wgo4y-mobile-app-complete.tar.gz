@@ -224,6 +224,24 @@ const Profile = () => {
               ) : (
                 <div className="space-y-6" data-testid="profile-view">
                   <div className="text-center py-6">
+                    {user?.photo_url ? (
+                      <div className="flex justify-center mb-4">
+                        <img 
+                          src={user.photo_url} 
+                          alt={user.full_name}
+                          className="w-32 h-32 rounded-full object-cover border-4 border-purple-200 shadow-lg"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex justify-center mb-4">
+                        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
+                          {user?.full_name?.charAt(0) || user?.username?.charAt(0) || '?'}
+                        </div>
+                      </div>
+                    )}
                     <div className="inline-block px-8 py-4 bg-purple-50 rounded-lg">
                       <p className="text-2xl font-semibold mb-2">{user?.full_name}</p>
                       <p className="text-xl text-purple-600 mb-3">@{user?.username}</p>
