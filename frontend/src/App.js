@@ -12,6 +12,8 @@ import CreateEvent from '@/pages/CreateEvent';
 import Venues from '@/pages/Venues';
 import VenueDetail from '@/pages/VenueDetail';
 import CreateVenue from '@/pages/CreateVenue';
+import Profile from '@/pages/Profile';
+import Jobs from '@/pages/Jobs';
 import '@/App.css';
 
 // Protected Route Component
