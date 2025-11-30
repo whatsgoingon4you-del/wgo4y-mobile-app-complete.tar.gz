@@ -88,6 +88,11 @@ function AppContent() {
       } />
 
       {/* Protected Routes */}
+      <Route path="/onboarding" element={
+        <ProtectedRoute skipOnboarding={true}>
+          <Onboarding />
+        </ProtectedRoute>
+      } />
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <Dashboard />
