@@ -97,7 +97,7 @@ function AppContent() {
       } />
 
       {/* 404 Route */}
-      <Route path="*" element=<Navigate to="/" />} />
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 }
