@@ -32,6 +32,7 @@ class UserLogin(BaseModel):
 class UserResponse(UserBase):
     id: str
     application_count: int
+    onboarding_completed: bool
     created_at: datetime
 
 class PasswordResetRequest(BaseModel):
