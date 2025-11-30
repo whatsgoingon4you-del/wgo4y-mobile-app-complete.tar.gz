@@ -42,12 +42,19 @@ const Onboarding = () => {
   };
 
   const handleSavePhoto = async () => {
+    console.log('=== handleSavePhoto called ===');
+    console.log('Upload method:', uploadMethod);
+    console.log('Selected file:', selectedFile);
+    console.log('Photo URL:', photoUrl);
+
     // If no photo selected, just skip
     if (uploadMethod === 'upload' && !selectedFile) {
+      console.log('No file selected, skipping to step 2');
       setStep(2);
       return;
     }
     if (uploadMethod === 'url' && !photoUrl) {
+      console.log('No URL entered, skipping to step 2');
       setStep(2);
       return;
     }
@@ -55,11 +62,12 @@ const Onboarding = () => {
     setLoading(true);
     try {
       if (uploadMethod === 'upload' && selectedFile) {
+        console.log('Uploading file...');
         // Upload file
         const formData = new FormData();
         formData.append('file', selectedFile);
         
-        await axios.post(
+        const response = await axios.post(
           `${API}/upload/profile-picture`,
           formData,
           { 
@@ -69,19 +77,25 @@ const Onboarding = () => {
             } 
           }
         );
+        console.log('Upload response:', response.data);
       } else if (uploadMethod === 'url' && photoUrl) {
+        console.log('Saving URL...');
         // Save URL
-        await axios.put(
+        const response = await axios.put(
           `${API}/users/profile`,
           { photo_url: photoUrl },
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        console.log('Save URL response:', response.data);
       }
       
+      console.log('Refreshing user data...');
       await refreshUser();
+      console.log('Moving to step 2');
       setStep(2);
     } catch (error) {
       console.error('Failed to save photo:', error);
+      console.error('Error details:', error.response?.data);
       setStep(2); // Continue anyway
     } finally {
       setLoading(false);
