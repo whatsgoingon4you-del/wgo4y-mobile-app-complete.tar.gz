@@ -40,6 +40,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    if (!token) return;
+    try {
+      const response = await axios.get(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUser(response.data);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+      return { success: false, error: 'Failed to refresh user data' };
+    }
+  };
+
   const signup = async (userData) => {
     try {
       const response = await axios.post(`${API}/auth/signup`, userData);
