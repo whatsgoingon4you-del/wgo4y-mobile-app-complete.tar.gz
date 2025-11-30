@@ -99,19 +99,22 @@ const Onboarding = () => {
       
       console.log('Onboarding update response:', response.data);
       
-      // Wait a bit for the update to propagate
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Immediately fetch fresh user data
+      const userResponse = await axios.get(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
-      // Refresh user data
-      const refreshResult = await refreshUser();
-      console.log('Refresh result:', refreshResult);
+      console.log('Fresh user data:', userResponse.data);
       
-      // Force navigate to dashboard
-      navigate('/dashboard', { replace: true });
+      // Refresh in context
+      await refreshUser();
+      
+      // Force navigate with replace to prevent back button issues
+      window.location.href = '/dashboard';
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
-      // Force navigate anyway
-      navigate('/dashboard', { replace: true });
+      // Force navigate anyway with full reload
+      window.location.href = '/dashboard';
     } finally {
       setLoading(false);
     }
