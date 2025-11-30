@@ -11,6 +11,7 @@ class UserBase(BaseModel):
     username: str  # Public username/handle
     role: str  # business/venue, entrepreneur/worker, general
     tier: str = "basic"  # basic, silver, gold (default basic)
+    photo_url: Optional[str] = None  # Profile picture URL
 
 class UserCreate(UserBase):
     password: str
