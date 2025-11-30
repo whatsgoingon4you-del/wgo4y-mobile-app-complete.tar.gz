@@ -20,7 +20,8 @@ const Profile = () => {
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
     username: user?.username || '',
-    email: user?.email || ''
+    email: user?.email || '',
+    photo_url: user?.photo_url || ''
   });
 
   const handleLogout = () => {
