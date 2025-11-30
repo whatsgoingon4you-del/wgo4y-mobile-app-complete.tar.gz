@@ -32,6 +32,18 @@ const Profile = () => {
     navigate('/');
   };
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleEditToggle = () => {
     if (isEditing) {
       // Reset form to original values
@@ -41,6 +53,8 @@ const Profile = () => {
         email: user?.email || '',
         photo_url: user?.photo_url || ''
       });
+      setSelectedFile(null);
+      setPreviewUrl('');
       setMessage({ type: '', text: '' });
     }
     setIsEditing(!isEditing);
