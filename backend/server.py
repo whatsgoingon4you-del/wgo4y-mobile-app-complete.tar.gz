@@ -218,6 +218,62 @@ async def update_profile(updates: dict, current_user: dict = Depends(get_current
     if not updates:
         raise HTTPException(status_code=400, detail="No valid fields to update")
     
+
+# ==================== IMAGE UPLOAD ENDPOINT ====================
+
+# Create uploads directory if it doesn't exist
+UPLOAD_DIR = Path("/app/frontend/public/uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+@api_router.post("/upload/profile-picture")
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload profile picture and return the URL"""
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid file type. Allowed types: JPEG, PNG, GIF, WebP"
+        )
+    
+    # Validate file size (max 5MB)
+    file.file.seek(0, 2)  # Seek to end
+    file_size = file.file.tell()
+    file.file.seek(0)  # Reset to beginning
+    
+    if file_size > 5 * 1024 * 1024:  # 5MB
+        raise HTTPException(status_code=400, detail="File size too large. Maximum size is 5MB")
+    
+    # Generate unique filename
+    file_extension = file.filename.split('.')[-1]
+    unique_filename = f"{current_user['sub']}_{uuid.uuid4()}.{file_extension}"
+    file_path = UPLOAD_DIR / unique_filename
+    
+    # Save file
+    try:
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        logger.error(f"Failed to save file: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save file")
+    
+    # Return the public URL path
+    photo_url = f"/uploads/{unique_filename}"
+    
+    # Update user profile with new photo URL
+    await db.users.update_one(
+        {"id": current_user['sub']},
+        {"$set": {"photo_url": photo_url}}
+    )
+    
+    return {
+        "photo_url": photo_url,
+        "message": "Profile picture uploaded successfully"
+    }
+
     # Validate username uniqueness if being updated (case-insensitive)
     if 'username' in updates:
         existing_username = await db.users.find_one(
