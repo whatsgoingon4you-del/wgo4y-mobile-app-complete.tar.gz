@@ -134,6 +134,31 @@ const Profile = () => {
               {isEditing ? (
                 <form onSubmit={handleSubmit} className="space-y-6" data-testid="edit-profile-form">
                   <div className="space-y-2">
+                    <Label htmlFor="photo_url">Profile Picture</Label>
+                    <Input
+                      id="photo_url"
+                      data-testid="photo-url-input"
+                      placeholder="https://example.com/your-photo.jpg"
+                      value={formData.photo_url}
+                      onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
+                    />
+                    <p className="text-xs text-gray-500">Enter a direct link to your profile picture (optional)</p>
+                    {formData.photo_url && (
+                      <div className="mt-2">
+                        <img 
+                          src={formData.photo_url} 
+                          alt="Preview" 
+                          className="w-24 h-24 rounded-full object-cover border-2 border-purple-200"
+                          onError={(e) => {
+                            e.target.src = '';
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="full_name">Full Name</Label>
                     <Input
                       id="full_name"
