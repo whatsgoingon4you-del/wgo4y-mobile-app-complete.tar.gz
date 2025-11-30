@@ -28,6 +28,50 @@ const Profile = () => {
     navigate('/');
   };
 
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // Reset form to original values
+      setFormData({
+        full_name: user?.full_name || '',
+        username: user?.username || '',
+        email: user?.email || ''
+      });
+      setMessage({ type: '', text: '' });
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage({ type: '', text: '' });
+    setLoading(true);
+
+    try {
+      // Update profile
+      await axios.put(
+        `${API}/users/profile`,
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setMessage({ type: 'success', text: 'Profile updated successfully! Please log in again to see changes.' });
+      setIsEditing(false);
+      
+      // Logout after 2 seconds to refresh token
+      setTimeout(() => {
+        logout();
+        navigate('/login');
+      }, 2000);
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error.response?.data?.detail || 'Failed to update profile' 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       {/* Header */}
