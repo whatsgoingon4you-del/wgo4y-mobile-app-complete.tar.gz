@@ -17,6 +17,9 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [uploadMethod, setUploadMethod] = useState('upload');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
     username: user?.username || '',
