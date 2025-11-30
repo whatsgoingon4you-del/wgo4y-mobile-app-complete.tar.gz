@@ -6,6 +6,9 @@ import Signup from '@/pages/Signup';
 import Login from '@/pages/Login';
 import ForgotPassword from '@/pages/ForgotPassword';
 import Dashboard from '@/pages/Dashboard';
+import Events from '@/pages/Events';
+import EventDetail from '@/pages/EventDetail';
+import CreateEvent from '@/pages/CreateEvent';
 import '@/App.css';
 
 // Protected Route Component
