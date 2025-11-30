@@ -3474,12 +3474,17 @@ async def get_my_posted_jobs(
         # Count applications for each job
         app_count = await db.job_applications.count_documents({'job_id': job['_id']})
         
+        # Build location string from city and state
+        location = f"{job.get('city', '')}, {job.get('state', '')}"
+        
         jobs.append({
             'id': job['_id'],
             'title': job['title'],
             'role': job['role'],
-            'date': job['date'].isoformat() if isinstance(job.get('date'), datetime) else job.get('date'),
-            'location': job['location'],
+            'event_date': job.get('event_date'),
+            'city': job.get('city'),
+            'state': job.get('state'),
+            'location': location,
             'description': job['description'],
             'pay': job.get('pay'),
             'status': job['status'],
