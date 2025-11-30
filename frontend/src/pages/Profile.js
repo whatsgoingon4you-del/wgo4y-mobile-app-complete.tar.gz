@@ -183,26 +183,69 @@ const Profile = () => {
               {isEditing ? (
                 <form onSubmit={handleSubmit} className="space-y-6" data-testid="edit-profile-form">
                   <div className="space-y-2">
-                    <Label htmlFor="photo_url">Profile Picture</Label>
-                    <Input
-                      id="photo_url"
-                      data-testid="photo-url-input"
-                      placeholder="https://example.com/your-photo.jpg"
-                      value={formData.photo_url}
-                      onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
-                    />
-                    <p className="text-xs text-gray-500">Enter a direct link to your profile picture (optional)</p>
-                    {formData.photo_url && (
-                      <div className="mt-2">
+                    <Label>Profile Picture</Label>
+                    
+                    {/* Preview */}
+                    <div className="flex justify-center mb-4">
+                      {(previewUrl || formData.photo_url) ? (
                         <img 
-                          src={formData.photo_url} 
+                          src={previewUrl || formData.photo_url} 
                           alt="Preview" 
-                          className="w-24 h-24 rounded-full object-cover border-2 border-purple-200"
+                          className="w-24 h-24 rounded-full object-cover border-4 border-purple-200"
                           onError={(e) => {
-                            e.target.src = '';
                             e.target.style.display = 'none';
                           }}
                         />
+                      ) : (
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center text-white text-4xl font-bold">
+                          {user?.full_name?.charAt(0) || user?.username?.charAt(0) || '?'}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Upload Method Toggle */}
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={uploadMethod === 'upload' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setUploadMethod('upload')}
+                      >
+                        Upload File
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={uploadMethod === 'url' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setUploadMethod('url')}
+                      >
+                        Use URL
+                      </Button>
+                    </div>
+
+                    {uploadMethod === 'upload' ? (
+                      <div>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileSelect}
+                          data-testid="file-input"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Upload JPEG, PNG, GIF, or WebP (max 5MB)</p>
+                        {selectedFile && (
+                          <p className="text-xs text-green-600 mt-1">✓ {selectedFile.name} selected</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <Input
+                          id="photo_url"
+                          data-testid="photo-url-input"
+                          placeholder="https://example.com/your-photo.jpg"
+                          value={formData.photo_url}
+                          onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Enter a direct link to your profile picture</p>
                       </div>
                     )}
                   </div>
