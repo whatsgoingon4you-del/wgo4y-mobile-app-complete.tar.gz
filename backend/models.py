@@ -22,6 +22,7 @@ class User(UserBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     application_count: int = 0  # Track monthly job applications
     application_reset_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    onboarding_completed: bool = False  # Track if user completed onboarding
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserLogin(BaseModel):
