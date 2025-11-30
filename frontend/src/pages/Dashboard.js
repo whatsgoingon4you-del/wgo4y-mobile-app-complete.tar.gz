@@ -39,6 +39,9 @@ const Dashboard = () => {
           <h2 className="text-4xl font-bold mb-2" data-testid="welcome-message">
             Welcome back, {user?.full_name}!
           </h2>
+          <p className="text-gray-600 mb-2">
+            <span className="text-purple-600 font-semibold">@{user?.username}</span>
+          </p>
           <p className="text-gray-600 mb-8">
             Role: <span className="font-semibold capitalize" data-testid="user-role">{user?.role?.replace('/', ' / ')}</span>
             {' '}•{' '}
