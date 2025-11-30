@@ -54,14 +54,11 @@ const Profile = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setMessage({ type: 'success', text: 'Profile updated successfully! Please log in again to see changes.' });
-      setIsEditing(false);
+      // Refresh user data to show changes immediately
+      await refreshUser();
       
-      // Logout after 2 seconds to refresh token
-      setTimeout(() => {
-        logout();
-        navigate('/login');
-      }, 2000);
+      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      setIsEditing(false);
     } catch (error) {
       setMessage({ 
         type: 'error', 
