@@ -66,10 +66,40 @@ const Profile = () => {
     setLoading(true);
 
     try {
-      // Update profile
+      // Upload file first if selected
+      if (selectedFile) {
+        const fileFormData = new FormData();
+        fileFormData.append('file', selectedFile);
+        
+        await axios.post(
+          `${API}/upload/profile-picture`,
+          fileFormData,
+          { 
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data'
+            } 
+          }
+        );
+      } else if (formData.photo_url !== user?.photo_url) {
+        // Update profile with URL if changed
+        await axios.put(
+          `${API}/users/profile`,
+          { photo_url: formData.photo_url },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      // Update other profile fields
+      const updates = {
+        full_name: formData.full_name,
+        username: formData.username,
+        email: formData.email
+      };
+      
       await axios.put(
         `${API}/users/profile`,
-        formData,
+        updates,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -78,6 +108,8 @@ const Profile = () => {
       
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
       setIsEditing(false);
+      setSelectedFile(null);
+      setPreviewUrl('');
     } catch (error) {
       setMessage({ 
         type: 'error', 
