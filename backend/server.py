@@ -219,6 +219,31 @@ async def update_profile(updates: dict, current_user: dict = Depends(get_current
         raise HTTPException(status_code=400, detail="No valid fields to update")
     
 
+
+@api_router.post("/auth/complete-onboarding")
+async def complete_onboarding(current_user: dict = Depends(get_current_user)):
+    """Mark onboarding as completed"""
+    result = await db.users.update_one(
+        {"id": current_user['sub']},
+        {"$set": {"onboarding_completed": True}}
+    )
+    
+    if result.modified_count == 0:
+        logger.warning(f"Onboarding completion not modified for user {current_user['sub']}")
+    else:
+        logger.info(f"Onboarding completed for user {current_user['sub']}")
+    
+    # Get updated user
+    user_doc = await db.users.find_one({"id": current_user['sub']}, {"_id": 0})
+    user_doc = deserialize_datetime(user_doc)
+    
+    return {
+        "success": True,
+        "user": UserResponse(**user_doc),
+        "message": "Onboarding completed successfully"
+    }
+
+
 # ==================== IMAGE UPLOAD ENDPOINT ====================
 
 # Create uploads directory if it doesn't exist
