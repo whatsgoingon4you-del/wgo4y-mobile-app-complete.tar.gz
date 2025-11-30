@@ -9,6 +9,9 @@ import Dashboard from '@/pages/Dashboard';
 import Events from '@/pages/Events';
 import EventDetail from '@/pages/EventDetail';
 import CreateEvent from '@/pages/CreateEvent';
+import Venues from '@/pages/Venues';
+import VenueDetail from '@/pages/VenueDetail';
+import CreateVenue from '@/pages/CreateVenue';
 import '@/App.css';
 
 // Protected Route Component
