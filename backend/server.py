@@ -402,9 +402,10 @@ async def rsvp_to_event(event_id: str, current_user: dict = Depends(get_current_
     notification_dict = serialize_datetime(notification.model_dump())
     await db.notifications.insert_one(notification_dict)
     
+    action = "RSVP'd" if status == "confirmed" else "added to waitlist"
     return {
         "status": status,
-        "message": f"Successfully {'RSVP\'d' if status == 'confirmed' else 'added to waitlist'} for {event['name']}"
+        "message": f"Successfully {action} for {event['name']}"
     }
 
 @api_router.delete("/events/{event_id}/rsvp")
