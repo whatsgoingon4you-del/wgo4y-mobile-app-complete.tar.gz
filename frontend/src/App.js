@@ -115,12 +115,12 @@ function AppContent() {
       } />
       <Route path="/jobs" element={
         <ProtectedRoute>
-          <div className="p-8 text-center">Jobs page coming soon...</div>
+          <Jobs />
         </ProtectedRoute>
       } />
       <Route path="/profile" element={
         <ProtectedRoute>
-          <div className="p-8 text-center">Profile page coming soon...</div>
+          <Profile />
         </ProtectedRoute>
       } />
 
