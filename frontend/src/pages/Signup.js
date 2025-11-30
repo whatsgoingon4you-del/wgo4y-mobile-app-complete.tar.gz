@@ -82,9 +82,9 @@ const Signup = () => {
               <Input
                 id="username"
                 data-testid="username-input"
-                placeholder="johndoe"
+                placeholder="DJNice"
                 value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') })}
                 required
               />
               <p className="text-xs text-gray-500">Your public username (letters, numbers, and underscores only)</p>
