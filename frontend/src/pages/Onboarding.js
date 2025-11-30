@@ -103,34 +103,49 @@ const Onboarding = () => {
   };
 
   const handleCompleteOnboarding = async () => {
+    console.log('=== handleCompleteOnboarding called ===');
     setLoading(true);
+    
     try {
+      console.log('Updating onboarding_completed to true...');
       const response = await axios.put(
         `${API}/users/profile`,
         { onboarding_completed: true },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      console.log('Onboarding update response:', response.data);
+      console.log('✓ Onboarding update response:', response.data);
       
-      // Immediately fetch fresh user data
+      // Immediately fetch fresh user data to verify
+      console.log('Fetching fresh user data...');
       const userResponse = await axios.get(`${API}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log('Fresh user data:', userResponse.data);
+      console.log('✓ Fresh user data:', userResponse.data);
+      console.log('  - onboarding_completed:', userResponse.data.onboarding_completed);
       
-      // Refresh in context
-      await refreshUser();
+      if (userResponse.data.onboarding_completed !== true) {
+        console.error('❌ WARNING: onboarding_completed is not true after update!');
+        console.error('   Expected: true, Got:', userResponse.data.onboarding_completed);
+      } else {
+        console.log('✓ Onboarding completion verified!');
+      }
       
-      // Force navigate with replace to prevent back button issues
+      // Small delay to ensure database is updated
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      console.log('Navigating to dashboard with full reload...');
+      // Force navigate with full reload
       window.location.href = '/dashboard';
+      
     } catch (error) {
-      console.error('Failed to complete onboarding:', error);
-      // Force navigate anyway with full reload
+      console.error('❌ Failed to complete onboarding:', error);
+      console.error('Error details:', error.response?.data);
+      
+      // Even if it fails, try to navigate
+      console.log('Attempting to navigate anyway...');
       window.location.href = '/dashboard';
-    } finally {
-      setLoading(false);
     }
   };
 
