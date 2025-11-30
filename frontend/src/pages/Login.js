@@ -37,13 +37,8 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md" data-testid="login-form">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">W</span>
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              WGO4Y
-            </h1>
+          <div className="flex justify-center mb-4">
+            <Logo className="h-16" />
           </div>
           <CardTitle className="text-3xl">Welcome Back</CardTitle>
           <CardDescription>Sign in to your account</CardDescription>
