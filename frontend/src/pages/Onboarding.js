@@ -91,16 +91,27 @@ const Onboarding = () => {
   const handleCompleteOnboarding = async () => {
     setLoading(true);
     try {
-      await axios.put(
+      const response = await axios.put(
         `${API}/users/profile`,
         { onboarding_completed: true },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      await refreshUser();
-      navigate('/dashboard');
+      
+      console.log('Onboarding update response:', response.data);
+      
+      // Wait a bit for the update to propagate
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Refresh user data
+      const refreshResult = await refreshUser();
+      console.log('Refresh result:', refreshResult);
+      
+      // Force navigate to dashboard
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
-      navigate('/dashboard'); // Navigate anyway
+      // Force navigate anyway
+      navigate('/dashboard', { replace: true });
     } finally {
       setLoading(false);
     }
