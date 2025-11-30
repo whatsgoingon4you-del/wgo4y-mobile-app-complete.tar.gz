@@ -3513,6 +3513,9 @@ async def get_my_applications(
         # Get job details
         job = await db.job_postings.find_one({'_id': app['job_id']})
         if job:
+            # Build location string from city and state
+            location = f"{job.get('city', '')}, {job.get('state', '')}"
+            
             applications.append({
                 'id': app['_id'],
                 'job': {
@@ -3520,8 +3523,10 @@ async def get_my_applications(
                     'title': job['title'],
                     'role': job['role'],
                     'owner_name': job['owner_name'],
-                    'location': job['location'],
-                    'date': job['date'].isoformat() if isinstance(job.get('date'), datetime) else job.get('date'),
+                    'event_date': job.get('event_date'),
+                    'city': job.get('city'),
+                    'state': job.get('state'),
+                    'location': location,
                     'pay': job.get('pay'),
                     'status': job['status']
                 },
