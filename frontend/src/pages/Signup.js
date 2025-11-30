@@ -78,6 +78,19 @@ const Signup = () => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                data-testid="username-input"
+                placeholder="johndoe"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                required
+              />
+              <p className="text-xs text-gray-500">Your public username (letters, numbers, and underscores only)</p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
