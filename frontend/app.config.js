@@ -49,7 +49,7 @@ export default {
       typedRoutes: true,
     },
     extra: {
-      EXPO_PUBLIC_BACKEND_URL: process.env.EXPO_PUBLIC_BACKEND_URL || 'https://chatarchiver-1.preview.emergentagent.com',
+      EXPO_PUBLIC_BACKEND_URL: process.env.EXPO_PUBLIC_BACKEND_URL || 'https://expo-backend.preview.emergentagent.com',
     },
   },
 };
