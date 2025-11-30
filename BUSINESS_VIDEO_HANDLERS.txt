@@ -1,0 +1,91 @@
+// Portfolio Video Handlers for Business Edit Profile
+// Insert these functions after the photo handlers in edit-business.tsx
+
+  // Portfolio Video Handlers
+  const addPortfolioVideo = () => {
+    if (portfolioVideos.length >= 5) {
+      Alert.alert('Limit Reached', 'Maximum 5 portfolio videos allowed');
+      return;
+    }
+
+    if (!newVideoUrl.trim()) {
+      Alert.alert('Missing URL', 'Please enter a video URL');
+      return;
+    }
+
+    if (!isValidVideoUrl(newVideoUrl)) {
+      Alert.alert('Invalid URL', 'Please enter a valid YouTube or Vimeo URL');
+      return;
+    }
+
+    const parsedVideo = parseVideoUrl(newVideoUrl);
+    if (!parsedVideo) {
+      Alert.alert('Invalid URL', 'Could not parse video URL');
+      return;
+    }
+
+    const newVideo: PortfolioVideo = {
+      url: newVideoUrl,
+      title: newVideoTitle || `${parsedVideo.platform === 'youtube' ? 'YouTube' : 'Vimeo'} Video`,
+      platform: parsedVideo.platform,
+      videoId: parsedVideo.videoId,
+      thumbnailUrl: parsedVideo.thumbnailUrl,
+      featured: false,
+      featured_approved: false
+    };
+
+    setPortfolioVideos([...portfolioVideos, newVideo]);
+    setNewVideoUrl('');
+    setNewVideoTitle('');
+
+    Alert.alert('Success', 'Video added successfully');
+  };
+
+  const removePortfolioVideo = (index: number) => {
+    Alert.alert(
+      'Remove Video',
+      'Are you sure you want to remove this video?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: () => setPortfolioVideos(portfolioVideos.filter((_, i) => i !== index)) }
+      ]
+    );
+  };
+
+  const handleFeatureVideo = async (index: number) => {
+    const video = portfolioVideos[index];
+
+    // Check membership tier
+    if (membershipTier === 'free') {
+      setUpgradeModalVisible(true);
+      return;
+    }
+
+    // Check if another video is already featured
+    const currentlyFeatured = portfolioVideos.findIndex((v, i) => i !== index && v.featured);
+    
+    if (!video.featured && currentlyFeatured !== -1) {
+      Alert.alert(
+        'Already Featured',
+        'You can only feature one video at a time. Unfeature the current video first.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    const updatedVideos = [...portfolioVideos];
+    updatedVideos[index] = {
+      ...video,
+      featured: !video.featured,
+      featured_approved: false
+    };
+
+    setPortfolioVideos(updatedVideos);
+    
+    Alert.alert(
+      'Success',
+      video.featured 
+        ? 'Video unfeatured' 
+        : 'Video marked as featured! Pending admin approval.'
+    );
+  };

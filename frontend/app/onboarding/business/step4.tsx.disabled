@@ -1,0 +1,687 @@
+import React, { useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { VENUE_CATEGORIES } from './venueCategories';
+import { COMPREHENSIVE_AMENITIES } from './comprehensiveAmenities';
+import { ENTERTAINMENT_CATEGORIES } from './entertainmentCategories';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { formatErrorMessage } from '../../../utils/errorHandler';
+
+export default function BusinessStep4() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedEntertainment, setSelectedEntertainment] = useState<string[]>([]);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [entertainmentSearch, setEntertainmentSearch] = useState('');
+  const [amenitySearch, setAmenitySearch] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [facebook, setFacebook] = useState('');
+  const [website, setWebsite] = useState('');
+  const [yelp, setYelp] = useState('');
+  const [googleBusiness, setGoogleBusiness] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Load saved progress on mount
+  React.useEffect(() => {
+    loadSavedProgress();
+  }, []);
+
+  const loadSavedProgress = async () => {
+    try {
+      const savedData = await AsyncStorage.getItem('business_step4_progress');
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        if (data.selectedAmenities) setSelectedAmenities(data.selectedAmenities);
+        if (data.selectedCategories) setSelectedCategories(data.selectedCategories);
+        if (data.selectedEntertainment) setSelectedEntertainment(data.selectedEntertainment);
+        if (data.instagram) setInstagram(data.instagram);
+        if (data.facebook) setFacebook(data.facebook);
+        if (data.website) setWebsite(data.website);
+        if (data.yelp) setYelp(data.yelp);
+        if (data.googleBusiness) setGoogleBusiness(data.googleBusiness);
+        console.log('Loaded business Step 4 progress');
+      }
+    } catch (error) {
+      console.error('Error loading Step 4 progress:', error);
+    }
+  };
+
+  // Auto-save progress with debouncing
+  React.useEffect(() => {
+    const saveProgress = async () => {
+      try {
+        const progressData = {
+          selectedAmenities,
+          selectedCategories,
+          selectedEntertainment,
+          instagram,
+          facebook,
+          website,
+          yelp,
+          googleBusiness,
+        };
+        await AsyncStorage.setItem('business_step4_progress', JSON.stringify(progressData));
+      } catch (error) {
+        console.error('Error saving Step 4 progress:', error);
+      }
+    };
+
+    // Debounce save - only save if user stops interacting for 1 second
+    const timeoutId = setTimeout(saveProgress, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [selectedAmenities, selectedCategories, selectedEntertainment, instagram, facebook, website, yelp, googleBusiness]);
+
+  // Filter venue categories based on search
+  const filteredCategories = useMemo(() => {
+    if (!categorySearch.trim()) return VENUE_CATEGORIES;
+    return VENUE_CATEGORIES.filter(cat =>
+      cat.toLowerCase().includes(categorySearch.toLowerCase())
+    );
+  }, [categorySearch]);
+
+  // Filter entertainment categories based on search
+  const filteredEntertainment = useMemo(() => {
+    if (!entertainmentSearch.trim()) return ENTERTAINMENT_CATEGORIES;
+    return ENTERTAINMENT_CATEGORIES.filter(cat =>
+      cat.toLowerCase().includes(entertainmentSearch.toLowerCase())
+    );
+  }, [entertainmentSearch]);
+
+  // Filter amenities based on search
+  const filteredAmenities = useMemo(() => {
+    if (!amenitySearch.trim()) return COMPREHENSIVE_AMENITIES;
+    const searchLower = amenitySearch.toLowerCase();
+    return COMPREHENSIVE_AMENITIES.map(category => ({
+      ...category,
+      amenities: category.amenities.filter(amenity =>
+        amenity.toLowerCase().includes(searchLower)
+      )
+    })).filter(category => category.amenities.length > 0);
+  }, [amenitySearch]);
+
+  const toggleAmenity = (amenity: string) => {
+    if (selectedAmenities.includes(amenity)) {
+      setSelectedAmenities(selectedAmenities.filter(a => a !== amenity));
+    } else {
+      setSelectedAmenities([...selectedAmenities, amenity]);
+    }
+  };
+
+  const toggleCategory = (category: string) => {
+    if (selectedCategories.includes(category)) {
+      setSelectedCategories(selectedCategories.filter(c => c !== category));
+    } else {
+      setSelectedCategories([...selectedCategories, category]);
+    }
+  };
+
+  const toggleEntertainment = (entertainment: string) => {
+    if (selectedEntertainment.includes(entertainment)) {
+      setSelectedEntertainment(selectedEntertainment.filter(e => e !== entertainment));
+    } else {
+      setSelectedEntertainment([...selectedEntertainment, entertainment]);
+    }
+  };
+
+  const handleComplete = async () => {
+    if (selectedCategories.length === 0) {
+      Alert.alert('Required', 'Please select at least one venue category');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const token = await AsyncStorage.getItem('auth_token');
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
+      // Get business photos from AsyncStorage
+      const businessPhotosJson = await AsyncStorage.getItem('businessPhotos');
+      const businessPhotos = businessPhotosJson ? JSON.parse(businessPhotosJson) : [];
+      
+      // Parse hours from step 2
+      const hours = params.hours ? JSON.parse(params.hours as string) : {};
+
+      // Prepare profile update payload
+      const profileData = {
+        full_name: params.businessName,
+        bio: params.description,
+        location: params.address,
+        business_name: params.businessName,
+        business_type: params.businessType,
+        business_address: params.address,
+        business_phone: params.phone,
+        business_hours: hours,
+        business_description: params.description,
+        business_logo: params.businessLogo || '',
+        business_photos: businessPhotos,
+        amenities: selectedAmenities,
+        venue_categories: selectedCategories,
+        entertainment_categories: selectedEntertainment,
+        social_links: {
+          instagram: instagram.trim(),
+          facebook: facebook.trim(),
+          website: website.trim(),
+          yelp: yelp.trim(),
+          google_business: googleBusiness.trim(),
+        },
+      };
+
+      const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+      const response = await fetch(`${backendUrl}/api/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Update user data in AsyncStorage
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          const updatedUser = { ...user, ...data.user, profile_completed: true };
+          await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+
+        // Clear ALL Business onboarding progress after successful completion
+        try {
+          await AsyncStorage.multiRemove([
+            'business_step1_progress',
+            'onboarding_step2_progress',
+            'business_step3_progress',
+            'business_step4_progress',
+            'businessPhotos'
+          ]);
+          console.log('✅ Cleared all Business onboarding progress');
+        } catch (clearError) {
+          console.error('Error clearing onboarding progress:', clearError);
+        }
+
+        // Navigate to completion screen
+        router.replace('/onboarding/business/complete');
+      } else {
+        const errorMessage = formatErrorMessage({ response: { data } }, 'Failed to update profile');
+        Alert.alert('Error', errorMessage);
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      const errorMessage = formatErrorMessage(error, 'Failed to complete profile. Please try again.');
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <View style={styles.progressContainer}>
+          <View style={[styles.progressDot, styles.progressDotComplete]} />
+          <View style={[styles.progressDot, styles.progressDotComplete]} />
+          <View style={[styles.progressDot, styles.progressDotComplete]} />
+          <View style={[styles.progressDot, styles.progressDotActive]} />
+        </View>
+        <Text style={styles.stepText}>Step 4 of 4</Text>
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>Venue Details</Text>
+        <Text style={styles.subtitle}>Select categories, amenities, and add social links</Text>
+
+        {/* Venue Categories */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Venue Categories *</Text>
+          <Text style={styles.sectionSubtitle}>
+            Select all that apply ({selectedCategories.length} selected)
+          </Text>
+          
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color="#999" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search categories..."
+              value={categorySearch}
+              onChangeText={setCategorySearch}
+              autoCapitalize="none"
+            />
+            {categorySearch.length > 0 && (
+              <TouchableOpacity onPress={() => setCategorySearch('')}>
+                <Ionicons name="close-circle" size={20} color="#999" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.chipsContainer}>
+            {filteredCategories.map((category) => (
+              <TouchableOpacity
+                key={category}
+                style={[
+                  styles.chip,
+                  selectedCategories.includes(category) && styles.chipSelected
+                ]}
+                onPress={() => toggleCategory(category)}
+              >
+                <Text style={[
+                  styles.chipText,
+                  selectedCategories.includes(category) && styles.chipTextSelected
+                ]}>
+                  {category}
+                </Text>
+                {selectedCategories.includes(category) && (
+                  <Ionicons name="checkmark-circle" size={16} color="#fff" style={{ marginLeft: 4 }} />
+                )}
+              </TouchableOpacity>
+            ))}
+            {filteredCategories.length === 0 && (
+              <Text style={styles.noResults}>No categories found</Text>
+            )}
+          </View>
+        </View>
+
+        {/* Event/Entertainment Categories */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Event/Entertainment Categories</Text>
+          <Text style={styles.sectionSubtitle}>
+            What types of events does your venue regularly host? ({selectedEntertainment.length} selected)
+          </Text>
+          
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color="#999" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search entertainment types..."
+              value={entertainmentSearch}
+              onChangeText={setEntertainmentSearch}
+              autoCapitalize="none"
+            />
+            {entertainmentSearch.length > 0 && (
+              <TouchableOpacity onPress={() => setEntertainmentSearch('')}>
+                <Ionicons name="close-circle" size={20} color="#999" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.chipsContainer}>
+            {filteredEntertainment.map((entertainment) => (
+              <TouchableOpacity
+                key={entertainment}
+                style={[
+                  styles.chip,
+                  selectedEntertainment.includes(entertainment) && styles.chipSelected
+                ]}
+                onPress={() => toggleEntertainment(entertainment)}
+              >
+                <Text style={[
+                  styles.chipText,
+                  selectedEntertainment.includes(entertainment) && styles.chipTextSelected
+                ]}>
+                  {entertainment}
+                </Text>
+                {selectedEntertainment.includes(entertainment) && (
+                  <Ionicons name="checkmark-circle" size={16} color="#fff" style={{ marginLeft: 4 }} />
+                )}
+              </TouchableOpacity>
+            ))}
+            {filteredEntertainment.length === 0 && (
+              <Text style={styles.noResults}>No entertainment types found</Text>
+            )}
+          </View>
+        </View>
+
+        {/* Amenities */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Amenities & Features</Text>
+          <Text style={styles.sectionSubtitle}>
+            Select amenities your venue offers ({selectedAmenities.length} selected)
+          </Text>
+
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color="#999" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search amenities..."
+              value={amenitySearch}
+              onChangeText={setAmenitySearch}
+              autoCapitalize="none"
+            />
+            {amenitySearch.length > 0 && (
+              <TouchableOpacity onPress={() => setAmenitySearch('')}>
+                <Ionicons name="close-circle" size={20} color="#999" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Grouped Amenities */}
+          {filteredAmenities.map((categoryGroup) => (
+            <View key={categoryGroup.category} style={styles.amenityGroup}>
+              <Text style={styles.amenityGroupTitle}>{categoryGroup.category}</Text>
+              <View style={styles.chipsContainer}>
+                {categoryGroup.amenities.map((amenity) => (
+                  <TouchableOpacity
+                    key={amenity}
+                    style={[
+                      styles.chip,
+                      selectedAmenities.includes(amenity) && styles.chipSelected
+                    ]}
+                    onPress={() => toggleAmenity(amenity)}
+                  >
+                    <Text style={[
+                      styles.chipText,
+                      selectedAmenities.includes(amenity) && styles.chipTextSelected
+                    ]}>
+                      {amenity}
+                    </Text>
+                    {selectedAmenities.includes(amenity) && (
+                      <Ionicons name="checkmark-circle" size={16} color="#fff" style={{ marginLeft: 4 }} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          ))}
+          
+          {filteredAmenities.length === 0 && (
+            <Text style={styles.noResults}>No amenities found</Text>
+          )}
+        </View>
+
+        {/* Social Links */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Social Media & Links</Text>
+          <Text style={styles.sectionSubtitle}>Connect your online presence (optional)</Text>
+
+          <View style={styles.inputGroup}>
+            <View style={styles.inputWithIcon}>
+              <Ionicons name="logo-instagram" size={20} color="#E4405F" />
+              <TextInput
+                style={styles.input}
+                placeholder="Instagram username or URL"
+                value={instagram}
+                onChangeText={setInstagram}
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <View style={styles.inputWithIcon}>
+              <Ionicons name="logo-facebook" size={20} color="#1877F2" />
+              <TextInput
+                style={styles.input}
+                placeholder="Facebook page URL"
+                value={facebook}
+                onChangeText={setFacebook}
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <View style={styles.inputWithIcon}>
+              <Ionicons name="globe-outline" size={20} color="#1565FF" />
+              <TextInput
+                style={styles.input}
+                placeholder="Website URL"
+                value={website}
+                onChangeText={setWebsite}
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <View style={styles.inputWithIcon}>
+              <Ionicons name="star-outline" size={20} color="#FF0000" />
+              <TextInput
+                style={styles.input}
+                placeholder="Yelp business URL"
+                value={yelp}
+                onChangeText={setYelp}
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <View style={styles.inputWithIcon}>
+              <Ionicons name="business-outline" size={20} color="#4285F4" />
+              <TextInput
+                style={styles.input}
+                placeholder="Google Business Profile URL"
+                value={googleBusiness}
+                onChangeText={setGoogleBusiness}
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[styles.completeButton, (loading || selectedCategories.length === 0) && styles.buttonDisabled]}
+          onPress={handleComplete}
+          disabled={loading || selectedCategories.length === 0}
+        >
+          {loading ? (
+            <Text style={styles.completeButtonText}>Completing...</Text>
+          ) : (
+            <>
+              <Text style={styles.completeButtonText}>Complete Profile</Text>
+              <Ionicons name="checkmark-circle" size={20} color="#fff" />
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    padding: 24,
+    paddingBottom: 16,
+    alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 16,
+    top: 24,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  progressDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#e0e0e0',
+  },
+  progressDotComplete: {
+    backgroundColor: '#4CAF50',
+    width: 24,
+  },
+  progressDotActive: {
+    backgroundColor: '#1565FF',
+    width: 24,
+  },
+  stepText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+  },
+  chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  amenityGroup: {
+    marginBottom: 24,
+  },
+  amenityGroupTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1565FF',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  noResults: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    padding: 24,
+    fontStyle: 'italic',
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  chipSelected: {
+    backgroundColor: '#1565FF',
+    borderColor: '#1565FF',
+  },
+  chipText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  chipTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#f9f9f9',
+    gap: 12,
+  },
+  input: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16,
+  },
+  footer: {
+    padding: 24,
+  },
+  completeButton: {
+    flexDirection: 'row',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#4CAF50',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  completeButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+});

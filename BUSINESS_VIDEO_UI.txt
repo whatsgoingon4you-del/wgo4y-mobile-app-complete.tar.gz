@@ -1,0 +1,130 @@
+// Insert this section AFTER the Business Photos Section and BEFORE Operating Hours Section in edit-business.tsx
+
+          {/* Portfolio Videos Section */}
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('portfolio_videos')}
+          >
+            <Text style={styles.sectionTitle}>Portfolio Videos ({portfolioVideos.length}/5)</Text>
+            <Ionicons 
+              name={expandedSections.has('portfolio_videos') ? 'chevron-up' : 'chevron-down'} 
+              size={24} 
+              color="#666" 
+            />
+          </TouchableOpacity>
+
+          {expandedSections.has('portfolio_videos') && (
+            <View style={styles.sectionContent}>
+              <Text style={styles.helperText}>
+                Showcase your venue, menu highlights, or promotions with videos (Max 5)
+              </Text>
+
+              {/* Add Video Form */}
+              <View style={styles.videoInputContainer}>
+                <Text style={styles.label}>Video URL *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newVideoUrl}
+                  onChangeText={setNewVideoUrl}
+                  placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+                  placeholderTextColor="#999"
+                  autoCapitalize="none"
+                  keyboardType="url"
+                />
+
+                <Text style={styles.label}>Video Title (Optional)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newVideoTitle}
+                  onChangeText={setNewVideoTitle}
+                  placeholder="e.g., Grand Opening Event, New Menu Items"
+                  placeholderTextColor="#999"
+                  maxLength={60}
+                />
+
+                <TouchableOpacity 
+                  onPress={addPortfolioVideo} 
+                  style={[
+                    styles.addVideoButton,
+                    portfolioVideos.length >= 5 && styles.addVideoButtonDisabled
+                  ]}
+                  disabled={portfolioVideos.length >= 5}
+                >
+                  <Ionicons name="add-circle" size={24} color="#fff" />
+                  <Text style={styles.addVideoButtonText}>Add Video</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Video List */}
+              {portfolioVideos.length > 0 && (
+                <View style={styles.videoList}>
+                  <Text style={styles.videoListTitle}>Added Videos:</Text>
+                  {portfolioVideos.map((video, index) => (
+                    <View key={index} style={styles.videoItem}>
+                      <View style={styles.videoInfo}>
+                        <View style={styles.platformBadge}>
+                          <Ionicons 
+                            name={video.platform === 'youtube' ? 'logo-youtube' : 'logo-vimeo'} 
+                            size={16} 
+                            color="#fff" 
+                          />
+                          <Text style={styles.platformBadgeText}>
+                            {video.platform === 'youtube' ? 'YouTube' : 'Vimeo'}
+                          </Text>
+                        </View>
+                        
+                        {/* Featured Status Badge */}
+                        {video.featured && (
+                          <View style={[
+                            styles.featuredBadge,
+                            video.featured_approved ? styles.featuredApproved : styles.featuredPending
+                          ]}>
+                            <Ionicons 
+                              name={video.featured_approved ? 'star' : 'time-outline'} 
+                              size={12} 
+                              color="#fff" 
+                            />
+                            <Text style={styles.featuredBadgeText}>
+                              {video.featured_approved ? 'FEATURED' : 'PENDING'}
+                            </Text>
+                          </View>
+                        )}
+                        
+                        <Text style={styles.videoTitle} numberOfLines={2}>
+                          {video.title}
+                        </Text>
+                        <Text style={styles.videoUrl} numberOfLines={1}>
+                          {video.url}
+                        </Text>
+                        
+                        {/* Feature Video Button */}
+                        <TouchableOpacity 
+                          onPress={() => handleFeatureVideo(index)}
+                          style={styles.featureButton}
+                        >
+                          <Ionicons 
+                            name={video.featured ? 'star' : 'star-outline'} 
+                            size={16} 
+                            color={video.featured ? '#FFD700' : '#666'} 
+                          />
+                          <Text style={[
+                            styles.featureButtonText,
+                            video.featured && styles.featureButtonTextActive
+                          ]}>
+                            {video.featured ? 'Featured' : 'Feature This Video'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                      
+                      <TouchableOpacity 
+                        onPress={() => removePortfolioVideo(index)}
+                        style={styles.removeVideoButton}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#ff3b30" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
