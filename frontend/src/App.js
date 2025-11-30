@@ -80,7 +80,17 @@ function AppContent() {
       } />
       <Route path="/events" element={
         <ProtectedRoute>
-          <div className="p-8 text-center">Events page coming soon...</div>
+          <Events />
+        </ProtectedRoute>
+      } />
+      <Route path="/events/create" element={
+        <ProtectedRoute>
+          <CreateEvent />
+        </ProtectedRoute>
+      } />
+      <Route path="/events/:eventId" element={
+        <ProtectedRoute>
+          <EventDetail />
         </ProtectedRoute>
       } />
       <Route path="/venues" element={
