@@ -98,7 +98,17 @@ function AppContent() {
       } />
       <Route path="/venues" element={
         <ProtectedRoute>
-          <div className="p-8 text-center">Venues page coming soon...</div>
+          <Venues />
+        </ProtectedRoute>
+      } />
+      <Route path="/venues/create" element={
+        <ProtectedRoute>
+          <CreateVenue />
+        </ProtectedRoute>
+      } />
+      <Route path="/venues/:venueId" element={
+        <ProtectedRoute>
+          <VenueDetail />
         </ProtectedRoute>
       } />
       <Route path="/jobs" element={
