@@ -24,23 +24,60 @@ const Onboarding = () => {
   const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSkipPhoto = () => {
     setStep(2);
   };
 
   const handleSavePhoto = async () => {
-    if (!photoUrl) {
+    // If no photo selected, just skip
+    if (uploadMethod === 'upload' && !selectedFile) {
+      setStep(2);
+      return;
+    }
+    if (uploadMethod === 'url' && !photoUrl) {
       setStep(2);
       return;
     }
 
     setLoading(true);
     try {
-      await axios.put(
-        `${API}/users/profile`,
-        { photo_url: photoUrl },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      if (uploadMethod === 'upload' && selectedFile) {
+        // Upload file
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        await axios.post(
+          `${API}/upload/profile-picture`,
+          formData,
+          { 
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data'
+            } 
+          }
+        );
+      } else if (uploadMethod === 'url' && photoUrl) {
+        // Save URL
+        await axios.put(
+          `${API}/users/profile`,
+          { photo_url: photoUrl },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+      
       await refreshUser();
       setStep(2);
     } catch (error) {
