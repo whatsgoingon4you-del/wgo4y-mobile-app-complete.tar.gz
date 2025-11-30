@@ -260,11 +260,13 @@ const Profile = () => {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-800">
-                      <strong>Note:</strong> After updating your profile, you'll need to log in again to see the changes reflected throughout the app.
-                    </p>
-                  </div>
+                  {!user?.photo_url && (
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        <strong>Tip:</strong> Add a profile picture to personalize your account!
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
