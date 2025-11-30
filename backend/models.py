@@ -30,7 +30,6 @@ class UserLogin(BaseModel):
 class UserResponse(UserBase):
     id: str
     application_count: int
-    tier: str
     created_at: datetime
 
 class PasswordResetRequest(BaseModel):
