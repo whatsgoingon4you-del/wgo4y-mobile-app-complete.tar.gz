@@ -80,22 +80,28 @@ def deserialize_datetime(obj):
 @api_router.post("/auth/signup")
 async def signup(user_data: UserCreate):
     """Register a new user with role selection"""
-    # Check if user already exists
+    # Check if email already exists
     existing_user = await db.users.find_one({"email": user_data.email}, {"_id": 0})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Check if username already exists
+    existing_username = await db.users.find_one({"username": user_data.username}, {"_id": 0})
+    if existing_username:
+        raise HTTPException(status_code=400, detail="Username already taken")
     
     # Validate role
     valid_roles = ["business/venue", "entrepreneur/worker", "general"]
     if user_data.role not in valid_roles:
         raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {valid_roles}")
     
-    # Create user object
+    # Create user object with basic tier (all users start on basic)
     user = User(
         email=user_data.email,
         full_name=user_data.full_name,
+        username=user_data.username,
         role=user_data.role,
-        tier=user_data.tier if hasattr(user_data, 'tier') else "gold"
+        tier="basic"  # All users start on basic tier
     )
     
     # Hash password and store
