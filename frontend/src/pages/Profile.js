@@ -35,7 +35,8 @@ const Profile = () => {
       setFormData({
         full_name: user?.full_name || '',
         username: user?.username || '',
-        email: user?.email || ''
+        email: user?.email || '',
+        photo_url: user?.photo_url || ''
       });
       setMessage({ type: '', text: '' });
     }
