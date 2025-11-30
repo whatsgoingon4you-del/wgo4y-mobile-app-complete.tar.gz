@@ -207,6 +207,7 @@ async def reset_password(reset_data: PasswordReset):
 async def update_profile(updates: dict, current_user: dict = Depends(get_current_user)):
     """Update user profile"""
     # Remove sensitive fields that shouldn't be updated this way
+    # onboarding_completed is allowed so users can complete onboarding
     disallowed_fields = ['id', 'password_hash', 'created_at', 'application_count', 'role', 'tier']
     for field in disallowed_fields:
         updates.pop(field, None)
