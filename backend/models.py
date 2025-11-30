@@ -8,8 +8,9 @@ import uuid
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str
+    username: str  # Public username/handle
     role: str  # business/venue, entrepreneur/worker, general
-    tier: str = "gold"  # networking/basic, silver, gold (default gold for early users)
+    tier: str = "basic"  # basic, silver, gold (default basic)
 
 class UserCreate(UserBase):
     password: str
