@@ -18,8 +18,8 @@ import Onboarding from '@/pages/Onboarding';
 import '@/App.css';
 
 // Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, skipOnboarding = false }) => {
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
     return (
@@ -32,7 +32,16 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  // Redirect to onboarding if not completed (unless we're already on onboarding page)
+  if (!skipOnboarding && user && !user.onboarding_completed) {
+    return <Navigate to="/onboarding" />;
+  }
+
+  return children;
 };
 
 // Public Route Component (redirect to dashboard if already logged in)
