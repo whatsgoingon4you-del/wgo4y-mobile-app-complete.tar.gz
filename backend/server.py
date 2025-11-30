@@ -207,12 +207,36 @@ async def reset_password(reset_data: PasswordReset):
 async def update_profile(updates: dict, current_user: dict = Depends(get_current_user)):
     """Update user profile"""
     # Remove sensitive fields that shouldn't be updated this way
-    disallowed_fields = ['id', 'password_hash', 'created_at', 'application_count']
+    disallowed_fields = ['id', 'password_hash', 'created_at', 'application_count', 'role', 'tier']
     for field in disallowed_fields:
         updates.pop(field, None)
     
     if not updates:
         raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    # Validate username uniqueness if being updated (case-insensitive)
+    if 'username' in updates:
+        existing_username = await db.users.find_one(
+            {
+                "username": {"$regex": f"^{updates['username']}$", "$options": "i"},
+                "id": {"$ne": current_user['sub']}  # Exclude current user
+            },
+            {"_id": 0}
+        )
+        if existing_username:
+            raise HTTPException(status_code=400, detail="Username already taken")
+    
+    # Validate email uniqueness if being updated
+    if 'email' in updates:
+        existing_email = await db.users.find_one(
+            {
+                "email": updates['email'],
+                "id": {"$ne": current_user['sub']}  # Exclude current user
+            },
+            {"_id": 0}
+        )
+        if existing_email:
+            raise HTTPException(status_code=400, detail="Email already registered")
     
     result = await db.users.update_one(
         {"id": current_user['sub']},
@@ -220,7 +244,11 @@ async def update_profile(updates: dict, current_user: dict = Depends(get_current
     )
     
     if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
+        # Check if user exists but no changes were made
+        user_exists = await db.users.find_one({"id": current_user['sub']}, {"_id": 0})
+        if not user_exists:
+            raise HTTPException(status_code=404, detail="User not found")
+        # No changes needed, return current user
     
     # Get updated user
     user_doc = await db.users.find_one({"id": current_user['sub']}, {"_id": 0})
