@@ -78,10 +78,10 @@ const CreateEvent = () => {
   // Check if user is business/venue
   if (user?.role !== 'business/venue') {
     return (
-      <div className=\"min-h-screen flex items-center justify-center\">
-        <div className=\"text-center\">
-          <h2 className=\"text-2xl font-bold mb-2\">Access Denied</h2>
-          <p className=\"text-gray-600 mb-4\">Only business/venue accounts can create events</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
+          <p className="text-gray-600 mb-4">Only business/venue accounts can create events</p>
           <Button onClick={() => navigate('/events')}>Back to Events</Button>
         </div>
       </div>
@@ -89,26 +89,26 @@ const CreateEvent = () => {
   }
 
   return (
-    <div className=\"min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50\">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       {/* Header */}
-      <header className=\"bg-white border-b shadow-sm\">
-        <div className=\"container mx-auto px-4 py-4\">
-          <div className=\"flex justify-between items-center\">
-            <Logo className=\"h-10\" onClick={() => navigate('/dashboard')} />
-            <nav className=\"flex items-center space-x-6\">
-              <button onClick={() => navigate('/dashboard')} className=\"text-gray-600 hover:text-purple-600\">
+      <header className="bg-white border-b shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <Logo className="h-10" onClick={() => navigate('/dashboard')} />
+            <nav className="flex items-center space-x-6">
+              <button onClick={() => navigate('/dashboard')} className="text-gray-600 hover:text-purple-600">
                 Dashboard
               </button>
-              <button onClick={() => navigate('/events')} className=\"text-purple-600 font-semibold\">
+              <button onClick={() => navigate('/events')} className="text-purple-600 font-semibold">
                 Events
               </button>
-              <button onClick={() => navigate('/venues')} className=\"text-gray-600 hover:text-purple-600\">
+              <button onClick={() => navigate('/venues')} className="text-gray-600 hover:text-purple-600">
                 Venues
               </button>
-              <button onClick={() => navigate('/jobs')} className=\"text-gray-600 hover:text-purple-600\">
+              <button onClick={() => navigate('/jobs')} className="text-gray-600 hover:text-purple-600">
                 Jobs
               </button>
-              <Button variant=\"outline\" onClick={handleLogout}>
+              <Button variant="outline" onClick={handleLogout}>
                 Logout
               </Button>
             </nav>
@@ -117,63 +117,63 @@ const CreateEvent = () => {
       </header>
 
       {/* Main Content */}
-      <main className=\"container mx-auto px-4 py-8\">
-        <div className=\"max-w-2xl mx-auto\">
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
           <Button 
-            variant=\"outline\" 
+            variant="outline" 
             onClick={() => navigate('/events')} 
-            className=\"mb-6\"
-            data-testid=\"back-btn\"
+            className="mb-6"
+            data-testid="back-btn"
           >
             ← Back to Events
           </Button>
 
-          <Card data-testid=\"create-event-form\">
+          <Card data-testid="create-event-form">
             <CardHeader>
-              <CardTitle className=\"text-3xl\">Create New Event</CardTitle>
+              <CardTitle className="text-3xl">Create New Event</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className=\"space-y-6\">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 {error && (
-                  <Alert variant=\"destructive\" data-testid=\"error-alert\">
+                  <Alert variant="destructive" data-testid="error-alert">
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
 
-                <div className=\"space-y-2\">
-                  <Label htmlFor=\"name\">Event Name *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Event Name *</Label>
                   <Input
-                    id=\"name\"
-                    data-testid=\"name-input\"
-                    placeholder=\"Summer Music Festival\"
+                    id="name"
+                    data-testid="name-input"
+                    placeholder="Summer Music Festival"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                   />
                 </div>
 
-                <div className=\"space-y-2\">
-                  <Label htmlFor=\"date\">Event Date *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="date">Event Date *</Label>
                   <Input
-                    id=\"date\"
-                    type=\"date\"
-                    data-testid=\"date-input\"
+                    id="date"
+                    type="date"
+                    data-testid="date-input"
                     min={today}
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     required
                   />
-                  <p className=\"text-xs text-gray-500\">Events cannot be scheduled for past dates</p>
+                  <p className="text-xs text-gray-500">Events cannot be scheduled for past dates</p>
                 </div>
 
-                <div className=\"space-y-2\">
-                  <Label htmlFor=\"category\">Category *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category *</Label>
                   <Select 
                     value={formData.category} 
                     onValueChange={(value) => setFormData({ ...formData, category: value })}
                   >
-                    <SelectTrigger data-testid=\"category-select\">
-                      <SelectValue placeholder=\"Select a category\" />
+                    <SelectTrigger data-testid="category-select">
+                      <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((cat) => (
@@ -183,38 +183,38 @@ const CreateEvent = () => {
                   </Select>
                 </div>
 
-                <div className=\"space-y-2\">
-                  <Label htmlFor=\"location\">Location *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location *</Label>
                   <Input
-                    id=\"location\"
-                    data-testid=\"location-input\"
-                    placeholder=\"123 Main St, City, State\"
+                    id="location"
+                    data-testid="location-input"
+                    placeholder="123 Main St, City, State"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     required
                   />
                 </div>
 
-                <div className=\"space-y-2\">
-                  <Label htmlFor=\"capacity\">Capacity *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="capacity">Capacity *</Label>
                   <Input
-                    id=\"capacity\"
-                    type=\"number\"
-                    data-testid=\"capacity-input\"
-                    min=\"1\"
+                    id="capacity"
+                    type="number"
+                    data-testid="capacity-input"
+                    min="1"
                     value={formData.capacity}
                     onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                     required
                   />
-                  <p className=\"text-xs text-gray-500\">Maximum number of attendees (waitlist will auto-promote)</p>
+                  <p className="text-xs text-gray-500">Maximum number of attendees (waitlist will auto-promote)</p>
                 </div>
 
-                <div className=\"space-y-2\">
-                  <Label htmlFor=\"description\">Description *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description *</Label>
                   <Textarea
-                    id=\"description\"
-                    data-testid=\"description-input\"
-                    placeholder=\"Tell people what this event is about...\"
+                    id="description"
+                    data-testid="description-input"
+                    placeholder="Tell people what this event is about..."
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={6}
@@ -222,21 +222,21 @@ const CreateEvent = () => {
                   />
                 </div>
 
-                <div className=\"flex gap-4\">
+                <div className="flex gap-4">
                   <Button
-                    type=\"button\"
-                    variant=\"outline\"
+                    type="button"
+                    variant="outline"
                     onClick={() => navigate('/events')}
-                    className=\"flex-1\"
-                    data-testid=\"cancel-btn\"
+                    className="flex-1"
+                    data-testid="cancel-btn"
                   >
                     Cancel
                   </Button>
                   <Button
-                    type=\"submit\"
-                    className=\"flex-1 bg-gradient-to-r from-purple-600 to-blue-600\"
+                    type="submit"
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600"
                     disabled={loading}
-                    data-testid=\"submit-btn\"
+                    data-testid="submit-btn"
                   >
                     {loading ? 'Creating...' : 'Create Event'}
                   </Button>
