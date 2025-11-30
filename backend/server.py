@@ -85,8 +85,11 @@ async def signup(user_data: UserCreate):
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Check if username already exists
-    existing_username = await db.users.find_one({"username": user_data.username}, {"_id": 0})
+    # Check if username already exists (case-insensitive)
+    existing_username = await db.users.find_one(
+        {"username": {"$regex": f"^{user_data.username}$", "$options": "i"}}, 
+        {"_id": 0}
+    )
     if existing_username:
         raise HTTPException(status_code=400, detail="Username already taken")
     
