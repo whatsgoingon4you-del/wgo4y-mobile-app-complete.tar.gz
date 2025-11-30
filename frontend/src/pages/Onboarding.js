@@ -219,16 +219,14 @@ const Onboarding = () => {
                 {uploadMethod === 'upload' ? (
                   <div className="space-y-2">
                     <Label htmlFor="file_upload">Choose Photo</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="file_upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                        data-testid="file-input"
-                        className="flex-1"
-                      />
-                    </div>
+                    <input
+                      id="file_upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      data-testid="file-input"
+                      className="w-full p-2 border border-gray-300 rounded-md cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                    />
                     <p className="text-xs text-gray-500">Upload JPEG, PNG, GIF, or WebP (max 5MB)</p>
                     {selectedFile && (
                       <p className="text-xs text-green-600">✓ {selectedFile.name} selected</p>
