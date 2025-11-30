@@ -17,6 +17,9 @@ const Onboarding = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState('');
+  const [uploadMethod, setUploadMethod] = useState('upload'); // 'upload' or 'url'
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
 
   const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
