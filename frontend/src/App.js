@@ -14,6 +14,7 @@ import VenueDetail from '@/pages/VenueDetail';
 import CreateVenue from '@/pages/CreateVenue';
 import Profile from '@/pages/Profile';
 import Jobs from '@/pages/Jobs';
+import Onboarding from '@/pages/Onboarding';
 import '@/App.css';
 
 // Protected Route Component
