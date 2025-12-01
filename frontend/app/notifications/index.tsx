@@ -185,6 +185,23 @@ export default function NotificationsScreen() {
       case 'WORKER_APPROVED':
       case 'WORKER_CONTACT_REQUEST':
         return { name: 'briefcase-outline', color: '#2196F3' };
+      case 'IN_HOUSE_ASSIGNMENT':
+        return { name: 'calendar', color: '#FF6B35' };
+      case 'IN_HOUSE_STATUS_ADDED':
+      case 'IN_HOUSE_STATUS_RESTORED':
+        return { name: 'shield-checkmark', color: '#4CAF50' };
+      case 'IN_HOUSE_STATUS_REMOVED':
+        return { name: 'shield-outline', color: '#FF4444' };
+      case 'IN_HOUSE_DECLINE_WARNING':
+        return { name: 'warning', color: '#FFA500' };
+      case 'WORKER_ACCEPTED_ASSIGNMENT':
+        return { name: 'checkmark-circle', color: '#4CAF50' };
+      case 'WORKER_DECLINED_ASSIGNMENT':
+        return { name: 'close-circle', color: '#FFA500' };
+      case 'NEW_MANAGED_EVENT_REQUEST':
+        return { name: 'mail', color: '#2196F3' };
+      case 'MANAGED_EVENT_STATUS_UPDATED':
+        return { name: 'information-circle', color: '#2196F3' };
       default:
         return { name: 'notifications-outline', color: '#1565FF' };
     }
