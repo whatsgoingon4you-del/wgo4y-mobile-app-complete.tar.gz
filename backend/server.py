@@ -701,6 +701,225 @@ def require_premium_tier(user: Dict[str, Any], feature_name: str = "This feature
             detail=f"{feature_name} requires an upgraded membership. Your current tier: {tier}. Please upgrade to Appreciation, Networking, Gold, or Silver tier to access this feature."
         )
 
+
+# ============= IN-HOUSE WORKER DECLINE TRACKING HELPERS =============
+
+async def count_recent_declines(worker_id: str, days: int = 60) -> int:
+    """
+    Count non-excused declines for a worker in the last N days.
+    
+    Args:
+        worker_id: Worker profile ID
+        days: Number of days to look back (default 60)
+    
+    Returns:
+        Count of non-excused declines
+    """
+    worker = await db.worker_profiles.find_one({'_id': worker_id})
+    if not worker:
+        return 0
+    
+    decline_history = worker.get('decline_history', [])
+    cutoff_date = datetime.utcnow() - timedelta(days=days)
+    
+    # Count non-excused declines after cutoff date
+    recent_declines = [
+        d for d in decline_history 
+        if not d.get('excused', False) and d.get('declined_at', datetime.min) > cutoff_date
+    ]
+    
+    return len(recent_declines)
+
+async def track_decline(worker_id: str, assignment_id: str, reason: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Track a worker's decline and enforce the 3-declines-in-60-days policy.
+    
+    Args:
+        worker_id: Worker profile ID
+        assignment_id: Assignment ID being declined
+        reason: Optional reason for declining
+    
+    Returns:
+        Dict with decline count, warning status, and removed status
+    """
+    worker = await db.worker_profiles.find_one({'_id': worker_id})
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+    
+    # Create decline record
+    decline_record = {
+        'assignment_id': assignment_id,
+        'declined_at': datetime.utcnow(),
+        'reason': reason,
+        'excused': False,
+        'excused_by': None,
+        'excused_reason': None
+    }
+    
+    # Add to decline history
+    await db.worker_profiles.update_one(
+        {'_id': worker_id},
+        {'$push': {'decline_history': decline_record}}
+    )
+    
+    # Count recent declines
+    decline_count = await count_recent_declines(worker_id, 60)
+    
+    # Update total count
+    await db.worker_profiles.update_one(
+        {'_id': worker_id},
+        {'$set': {'total_declines_60_days': decline_count}}
+    )
+    
+    result = {
+        'decline_count': decline_count,
+        'warning': False,
+        'removed': False
+    }
+    
+    # Check if threshold reached (3 declines)
+    if decline_count >= 3:
+        # Remove in-house status
+        await db.worker_profiles.update_one(
+            {'_id': worker_id},
+            {'$set': {
+                'is_in_house': False,
+                'in_house_removed_at': datetime.utcnow(),
+                'in_house_removed_reason': '3 declines in 60 days'
+            }}
+        )
+        result['removed'] = True
+        print(f"⚠️  Worker {worker_id} removed from in-house status (3 declines in 60 days)")
+        
+        # Create notification for worker
+        import uuid
+        notif_id = str(uuid.uuid4())
+        await db.notifications.insert_one({
+            '_id': notif_id,
+            'user_id': worker.get('user_id'),
+            'type': 'IN_HOUSE_STATUS_REMOVED',
+            'title': 'In-House Status Removed',
+            'message': 'You have been removed from in-house worker status due to 3 declined assignments within 60 days. You may reapply after 60 days.',
+            'is_read': False,
+            'created_at': datetime.utcnow()
+        })
+        
+    elif decline_count == 2:
+        # Warning at 2 declines
+        result['warning'] = True
+        print(f"⚠️  Worker {worker_id} at 2 declines - one more will remove in-house status")
+        
+        # Create warning notification
+        import uuid
+        notif_id = str(uuid.uuid4())
+        await db.notifications.insert_one({
+            '_id': notif_id,
+            'user_id': worker.get('user_id'),
+            'type': 'IN_HOUSE_DECLINE_WARNING',
+            'title': 'In-House Status Warning',
+            'message': 'You have declined 2 assignments in the last 60 days. One more decline will remove you from in-house worker status.',
+            'is_read': False,
+            'created_at': datetime.utcnow()
+        })
+    
+    return result
+
+async def excuse_decline(worker_id: str, assignment_id: str, admin_user_id: str, excuse_reason: str):
+    """
+    Excuse a decline (removes it from the count).
+    
+    Args:
+        worker_id: Worker profile ID
+        assignment_id: Assignment ID to excuse
+        admin_user_id: Admin who is excusing the decline
+        excuse_reason: Reason for excusing (e.g., "Medical emergency")
+    """
+    worker = await db.worker_profiles.find_one({'_id': worker_id})
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+    
+    decline_history = worker.get('decline_history', [])
+    
+    # Find and update the decline record
+    updated_history = []
+    found = False
+    for record in decline_history:
+        if record.get('assignment_id') == assignment_id:
+            record['excused'] = True
+            record['excused_by'] = admin_user_id
+            record['excused_reason'] = excuse_reason
+            found = True
+        updated_history.append(record)
+    
+    if not found:
+        raise HTTPException(status_code=404, detail="Decline record not found")
+    
+    # Update worker profile
+    await db.worker_profiles.update_one(
+        {'_id': worker_id},
+        {'$set': {'decline_history': updated_history}}
+    )
+    
+    # Recalculate decline count
+    new_count = await count_recent_declines(worker_id, 60)
+    await db.worker_profiles.update_one(
+        {'_id': worker_id},
+        {'$set': {'total_declines_60_days': new_count}}
+    )
+    
+    # If count is now < 3 and they were removed, restore in-house status
+    if new_count < 3 and not worker.get('is_in_house', False):
+        await db.worker_profiles.update_one(
+            {'_id': worker_id},
+            {'$set': {
+                'is_in_house': True,
+                'in_house_restored_at': datetime.utcnow(),
+                'in_house_restored_by': admin_user_id
+            }}
+        )
+        
+        # Notify worker
+        import uuid
+        notif_id = str(uuid.uuid4())
+        await db.notifications.insert_one({
+            '_id': notif_id,
+            'user_id': worker.get('user_id'),
+            'type': 'IN_HOUSE_STATUS_RESTORED',
+            'title': 'In-House Status Restored',
+            'message': f'Your in-house worker status has been restored by admin. Reason: {excuse_reason}',
+            'is_read': False,
+            'created_at': datetime.utcnow()
+        })
+    
+    print(f"✅ Decline excused for worker {worker_id}, new count: {new_count}")
+
+async def reset_old_declines():
+    """
+    Reset decline counts for declines older than 60 days (rolling window).
+    This should be run periodically (e.g., daily cron job).
+    """
+    cutoff_date = datetime.utcnow() - timedelta(days=60)
+    
+    # Get all in-house workers
+    workers = await db.worker_profiles.find({'is_in_house': True}).to_list(1000)
+    
+    for worker in workers:
+        # Recalculate decline count
+        new_count = await count_recent_declines(worker['_id'], 60)
+        
+        # Update if changed
+        if new_count != worker.get('total_declines_60_days', 0):
+            await db.worker_profiles.update_one(
+                {'_id': worker['_id']},
+                {'$set': {
+                    'total_declines_60_days': new_count,
+                    'last_decline_reset': datetime.utcnow()
+                }}
+            )
+    
+    print(f"✅ Reset decline counts for {len(workers)} in-house workers")
+
+
 # ============= AUTH ROUTES =============
 
 @api_router.post("/auth/register")
