@@ -4823,6 +4823,1063 @@ async def stripe_webhook(request: Request):
 
 
 # Include router
+
+
+# ============= IN-HOUSE WORKER & MANAGED EVENT ROUTES =============
+
+# ============= ADMIN ROUTES - In-House Worker Management =============
+
+@api_router.post("/admin/in-house/workers/{worker_id}/add")
+async def add_in_house_worker(worker_id: str, user: Dict = Depends(get_current_user)):
+    """
+    Add a worker to in-house status (Admin only).
+    """
+    # Check if user is admin
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if worker exists
+    worker = await db.worker_profiles.find_one({'_id': worker_id})
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+    
+    # Check if already in-house
+    if worker.get('is_in_house', False):
+        raise HTTPException(status_code=400, detail="Worker is already in-house")
+    
+    # Add in-house status
+    await db.worker_profiles.update_one(
+        {'_id': worker_id},
+        {'$set': {
+            'is_in_house': True,
+            'in_house_since': datetime.utcnow(),
+            'decline_history': [],
+            'total_declines_60_days': 0,
+            'last_decline_reset': None
+        }}
+    )
+    
+    # Create notification for worker
+    import uuid
+    notif_id = str(uuid.uuid4())
+    await db.notifications.insert_one({
+        '_id': notif_id,
+        'user_id': worker.get('user_id'),
+        'type': 'IN_HOUSE_STATUS_ADDED',
+        'title': 'Welcome to WGO4Y In-House Team!',
+        'message': 'Congratulations! You have been selected as a WGO4Y in-house worker. You will receive exclusive managed event assignments.',
+        'is_read': False,
+        'created_at': datetime.utcnow()
+    })
+    
+    print(f"✅ Worker {worker_id} added to in-house status by admin {user['_id']}")
+    
+    return {
+        'message': 'Worker added to in-house status successfully',
+        'worker_id': worker_id
+    }
+
+@api_router.delete("/admin/in-house/workers/{worker_id}/remove")
+async def remove_in_house_worker(worker_id: str, user: Dict = Depends(get_current_user)):
+    """
+    Remove a worker from in-house status (Admin only).
+    """
+    # Check if user is admin
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if worker exists
+    worker = await db.worker_profiles.find_one({'_id': worker_id})
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+    
+    # Check if currently in-house
+    if not worker.get('is_in_house', False):
+        raise HTTPException(status_code=400, detail="Worker is not in-house")
+    
+    # Remove in-house status
+    await db.worker_profiles.update_one(
+        {'_id': worker_id},
+        {'$set': {
+            'is_in_house': False,
+            'in_house_removed_at': datetime.utcnow(),
+            'in_house_removed_by': user['_id'],
+            'in_house_removed_reason': 'Manually removed by admin'
+        }}
+    )
+    
+    # Create notification for worker
+    import uuid
+    notif_id = str(uuid.uuid4())
+    await db.notifications.insert_one({
+        '_id': notif_id,
+        'user_id': worker.get('user_id'),
+        'type': 'IN_HOUSE_STATUS_REMOVED',
+        'title': 'In-House Status Removed',
+        'message': 'Your in-house worker status has been removed by admin. Thank you for your service.',
+        'is_read': False,
+        'created_at': datetime.utcnow()
+    })
+    
+    print(f"✅ Worker {worker_id} removed from in-house status by admin {user['_id']}")
+    
+    return {
+        'message': 'Worker removed from in-house status successfully',
+        'worker_id': worker_id
+    }
+
+@api_router.get("/admin/in-house/workers")
+async def get_in_house_workers(
+    user: Dict = Depends(get_current_user),
+    role: Optional[str] = None,
+    status_filter: Optional[str] = None
+):
+    """
+    Get list of all in-house workers with their stats (Admin only).
+    """
+    # Check if user is admin
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Build query
+    query = {'is_in_house': True}
+    
+    if role:
+        query['role'] = role
+    
+    # Get workers
+    workers = await db.worker_profiles.find(query).sort('in_house_since', -1).to_list(1000)
+    
+    # Enrich with user data and stats
+    enriched_workers = []
+    for worker in workers:
+        user_data = await db.users.find_one({'_id': worker.get('user_id')})
+        
+        # Count assignments
+        total_assignments = await db.managed_event_requests.count_documents({
+            'worker_assignments.worker_id': worker['_id']
+        })
+        
+        completed_assignments = await db.managed_event_requests.count_documents({
+            'worker_assignments.worker_id': worker['_id'],
+            'status': 'completed'
+        })
+        
+        enriched_workers.append({
+            'id': worker['_id'],
+            'user_id': worker.get('user_id'),
+            'name': worker.get('stage_name') or user_data.get('full_name') or user_data.get('username'),
+            'role': worker.get('role'),
+            'in_house_since': worker.get('in_house_since'),
+            'total_declines_60_days': worker.get('total_declines_60_days', 0),
+            'decline_history_count': len(worker.get('decline_history', [])),
+            'total_assignments': total_assignments,
+            'completed_assignments': completed_assignments,
+            'profile_photo': user_data.get('profile_photo') if user_data else None
+        })
+    
+    return {
+        'workers': enriched_workers,
+        'total_count': len(enriched_workers)
+    }
+
+@api_router.get("/admin/in-house/workers/{worker_id}/stats")
+async def get_worker_stats(worker_id: str, user: Dict = Depends(get_current_user)):
+    """
+    Get detailed stats for a specific in-house worker (Admin only).
+    """
+    # Check if user is admin
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get worker
+    worker = await db.worker_profiles.find_one({'_id': worker_id})
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+    
+    # Get user data
+    user_data = await db.users.find_one({'_id': worker.get('user_id')})
+    
+    # Get assignments
+    assignments = []
+    async for request in db.managed_event_requests.find({
+        'worker_assignments.worker_id': worker_id
+    }).sort('created_at', -1):
+        # Find this worker's assignment in the request
+        worker_assignment = next(
+            (a for a in request.get('worker_assignments', []) if a.get('worker_id') == worker_id),
+            None
+        )
+        
+        if worker_assignment:
+            assignments.append({
+                'event_id': request['_id'],
+                'event_name': request.get('event_name'),
+                'event_date': request.get('event_date'),
+                'role': worker_assignment.get('role'),
+                'status': worker_assignment.get('status'),
+                'assigned_at': worker_assignment.get('assigned_at'),
+                'responded_at': worker_assignment.get('responded_at')
+            })
+    
+    # Calculate stats
+    total_assignments = len(assignments)
+    accepted = len([a for a in assignments if a['status'] == 'accepted'])
+    declined = len([a for a in assignments if a['status'] == 'declined'])
+    pending = len([a for a in assignments if a['status'] == 'pending'])
+    
+    # Get decline history
+    decline_history = worker.get('decline_history', [])
+    
+    return {
+        'worker': {
+            'id': worker['_id'],
+            'name': worker.get('stage_name') or user_data.get('full_name') or user_data.get('username'),
+            'role': worker.get('role'),
+            'is_in_house': worker.get('is_in_house', False),
+            'in_house_since': worker.get('in_house_since'),
+            'profile_photo': user_data.get('profile_photo') if user_data else None
+        },
+        'stats': {
+            'total_assignments': total_assignments,
+            'accepted': accepted,
+            'declined': declined,
+            'pending': pending,
+            'decline_count_60_days': worker.get('total_declines_60_days', 0),
+            'total_decline_history': len(decline_history)
+        },
+        'assignments': assignments,
+        'decline_history': decline_history
+    }
+
+# ============= ADMIN ROUTES - Managed Event Management =============
+
+@api_router.get("/admin/managed-events")
+async def get_managed_events(
+    user: Dict = Depends(get_current_user),
+    status: Optional[str] = None
+):
+    """
+    Get all managed event requests (Admin only).
+    """
+    # Check if user is admin
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Build query
+    query = {}
+    if status:
+        query['status'] = status
+    
+    # Get requests
+    requests = await db.managed_event_requests.find(query).sort('created_at', -1).to_list(1000)
+    
+    # Enrich with business data
+    enriched_requests = []
+    for request in requests:
+        business = await db.users.find_one({'_id': request.get('business_id')})
+        
+        enriched_requests.append({
+            'id': request['_id'],
+            'business_name': request.get('business_name'),
+            'business_contact': business.get('email') if business else None,
+            'event_name': request.get('event_name'),
+            'event_type': request.get('event_type'),
+            'event_date': request.get('event_date'),
+            'location': request.get('location'),
+            'budget': request.get('budget'),
+            'status': request.get('status'),
+            'worker_count': len(request.get('worker_assignments', [])),
+            'created_at': request.get('created_at'),
+            'updated_at': request.get('updated_at')
+        })
+    
+    return {
+        'requests': enriched_requests,
+        'total_count': len(enriched_requests)
+    }
+
+@api_router.get("/admin/managed-events/{event_id}")
+async def get_managed_event_details(event_id: str, user: Dict = Depends(get_current_user)):
+    """
+    Get detailed information about a managed event request (Admin only).
+    """
+    # Check if user is admin
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get request
+    request = await db.managed_event_requests.find_one({'_id': event_id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Managed event request not found")
+    
+    # Get business data
+    business = await db.users.find_one({'_id': request.get('business_id')})
+    
+    # Enrich worker assignments
+    enriched_assignments = []
+    for assignment in request.get('worker_assignments', []):
+        worker = await db.worker_profiles.find_one({'_id': assignment.get('worker_id')})
+        worker_user = await db.users.find_one({'_id': worker.get('user_id')}) if worker else None
+        
+        enriched_assignments.append({
+            **assignment,
+            'worker_name': worker.get('stage_name') or (worker_user.get('full_name') if worker_user else 'Unknown'),
+            'worker_phone': worker_user.get('phone') if worker_user else None,
+            'worker_email': worker_user.get('email') if worker_user else None
+        })
+    
+    return {
+        **request,
+        'id': request['_id'],
+        'business': {
+            'name': request.get('business_name'),
+            'contact_name': business.get('full_name') if business else None,
+            'email': business.get('email') if business else None,
+            'phone': business.get('phone') if business else None
+        },
+        'worker_assignments': enriched_assignments
+    }
+
+@api_router.post("/admin/managed-events/{event_id}/assign")
+async def assign_workers(
+    event_id: str,
+    assignment_data: ManagedEventAssignment,
+    user: Dict = Depends(get_current_user)
+):
+    """
+    Assign in-house workers to a managed event (Admin only).
+    """
+    # Check if user is admin
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get event request
+    request = await db.managed_event_requests.find_one({'_id': event_id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Managed event request not found")
+    
+    # Verify all workers are in-house
+    for assignment in assignment_data.worker_assignments:
+        worker = await db.worker_profiles.find_one({'_id': assignment.worker_id})
+        if not worker:
+            raise HTTPException(status_code=404, detail=f"Worker {assignment.worker_id} not found")
+        if not worker.get('is_in_house', False):
+            raise HTTPException(status_code=400, detail=f"Worker {assignment.worker_id} is not in-house")
+    
+    # Update event request with assignments
+    await db.managed_event_requests.update_one(
+        {'_id': event_id},
+        {'$set': {
+            'worker_assignments': [a.dict() for a in assignment_data.worker_assignments],
+            'status': 'assigning',
+            'updated_at': datetime.utcnow()
+        }}
+    )
+    
+    # Send notifications to all assigned workers
+    for assignment in assignment_data.worker_assignments:
+        worker = await db.worker_profiles.find_one({'_id': assignment.worker_id})
+        import uuid
+        notif_id = str(uuid.uuid4())
+        await db.notifications.insert_one({
+            '_id': notif_id,
+            'user_id': worker.get('user_id'),
+            'type': 'IN_HOUSE_ASSIGNMENT',
+            'event_id': event_id,
+            'assignment_role': assignment.role,
+            'title': f'New Managed Event Assignment - {assignment.role}',
+            'message': f'You have been assigned to "{request.get("event_name")}" on {request.get("event_date").strftime("%B %d, %Y")}. Please accept or decline.',
+            'is_read': False,
+            'created_at': datetime.utcnow()
+        })
+    
+    print(f"✅ Assigned {len(assignment_data.worker_assignments)} workers to event {event_id}")
+    
+    return {
+        'message': 'Workers assigned successfully',
+        'event_id': event_id,
+        'workers_assigned': len(assignment_data.worker_assignments)
+    }
+
+@api_router.post("/admin/managed-events/{event_id}/reassign")
+async def reassign_worker(
+    event_id: str,
+    old_worker_id: str,
+    new_worker_id: str,
+    role: str,
+    user: Dict = Depends(get_current_user)
+):
+    """
+    Reassign a worker slot after a decline (Admin only).
+    """
+    # Check if user is admin
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get event request
+    request = await db.managed_event_requests.find_one({'_id': event_id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Managed event request not found")
+    
+    # Verify new worker is in-house
+    new_worker = await db.worker_profiles.find_one({'_id': new_worker_id})
+    if not new_worker:
+        raise HTTPException(status_code=404, detail="New worker not found")
+    if not new_worker.get('is_in_house', False):
+        raise HTTPException(status_code=400, detail="New worker is not in-house")
+    
+    # Update assignment
+    worker_assignments = request.get('worker_assignments', [])
+    new_assignments = []
+    
+    for assignment in worker_assignments:
+        if assignment.get('worker_id') == old_worker_id and assignment.get('role') == role:
+            # Replace with new worker
+            new_worker_user = await db.users.find_one({'_id': new_worker.get('user_id')})
+            new_assignment = {
+                'worker_id': new_worker_id,
+                'worker_name': new_worker.get('stage_name') or new_worker_user.get('full_name') or new_worker_user.get('username'),
+                'role': role,
+                'status': 'pending',
+                'assigned_at': datetime.utcnow(),
+                'responded_at': None,
+                'decline_reason': None
+            }
+            new_assignments.append(new_assignment)
+            
+            # Notify new worker
+            import uuid
+            notif_id = str(uuid.uuid4())
+            await db.notifications.insert_one({
+                '_id': notif_id,
+                'user_id': new_worker.get('user_id'),
+                'type': 'IN_HOUSE_ASSIGNMENT',
+                'event_id': event_id,
+                'assignment_role': role,
+                'title': f'New Managed Event Assignment - {role}',
+                'message': f'You have been assigned to "{request.get("event_name")}" on {request.get("event_date").strftime("%B %d, %Y")}. Please accept or decline.',
+                'is_read': False,
+                'created_at': datetime.utcnow()
+            })
+        else:
+            new_assignments.append(assignment)
+    
+    # Update event request
+    await db.managed_event_requests.update_one(
+        {'_id': event_id},
+        {'$set': {
+            'worker_assignments': new_assignments,
+            'updated_at': datetime.utcnow()
+        }}
+    )
+    
+    print(f"✅ Reassigned {role} from {old_worker_id} to {new_worker_id} for event {event_id}")
+    
+    return {
+        'message': 'Worker reassigned successfully',
+        'event_id': event_id,
+        'new_worker_id': new_worker_id
+    }
+
+@api_router.patch("/admin/managed-events/{event_id}/status")
+async def update_event_status(
+    event_id: str,
+    status_data: ManagedEventStatusUpdate,
+    user: Dict = Depends(get_current_user)
+):
+    """
+    Update status of a managed event request (Admin only).
+    """
+    # Check if user is admin
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Validate status
+    valid_statuses = ['pending', 'reviewing', 'assigning', 'confirmed', 'in_progress', 'completed', 'cancelled']
+    if status_data.status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
+    
+    # Get event request
+    request = await db.managed_event_requests.find_one({'_id': event_id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Managed event request not found")
+    
+    # Update status
+    update_dict = {
+        'status': status_data.status,
+        'updated_at': datetime.utcnow()
+    }
+    
+    # Add timestamp for specific statuses
+    if status_data.status == 'confirmed':
+        update_dict['confirmed_at'] = datetime.utcnow()
+    elif status_data.status == 'completed':
+        update_dict['completed_at'] = datetime.utcnow()
+    
+    await db.managed_event_requests.update_one(
+        {'_id': event_id},
+        {'$set': update_dict}
+    )
+    
+    # Notify business of status change
+    business = await db.users.find_one({'_id': request.get('business_id')})
+    if business:
+        import uuid
+        notif_id = str(uuid.uuid4())
+        await db.notifications.insert_one({
+            '_id': notif_id,
+            'user_id': business['_id'],
+            'type': 'MANAGED_EVENT_STATUS_UPDATED',
+            'event_id': event_id,
+            'title': f'Event Status Updated: {status_data.status.title()}',
+            'message': f'Your managed event "{request.get("event_name")}" is now {status_data.status}.',
+            'is_read': False,
+            'created_at': datetime.utcnow()
+        })
+    
+    print(f"✅ Updated event {event_id} status to {status_data.status}")
+    
+    return {
+        'message': 'Event status updated successfully',
+        'event_id': event_id,
+        'new_status': status_data.status
+    }
+
+@api_router.post("/admin/managed-events/assignments/{assignment_id}/excuse")
+async def excuse_worker_decline(
+    assignment_id: str,
+    excuse_data: ExcuseDeclineRequest,
+    user: Dict = Depends(get_current_user)
+):
+    """
+    Excuse a worker's decline (removes it from count) (Admin only).
+    """
+    # Check if user is admin
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Find the event and assignment
+    request = await db.managed_event_requests.find_one({
+        'worker_assignments.assignment_id': assignment_id
+    })
+    
+    if not request:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    # Find the worker from the assignment
+    worker_id = None
+    for assignment in request.get('worker_assignments', []):
+        if assignment.get('assignment_id') == assignment_id or str(assignment) == assignment_id:
+            worker_id = assignment.get('worker_id')
+            break
+    
+    if not worker_id:
+        raise HTTPException(status_code=404, detail="Worker not found for this assignment")
+    
+    # Excuse the decline
+    await excuse_decline(worker_id, assignment_id, user['_id'], excuse_data.excuse_reason)
+    
+    print(f"✅ Admin {user['_id']} excused decline for worker {worker_id}, assignment {assignment_id}")
+    
+    return {
+        'message': 'Decline excused successfully',
+        'worker_id': worker_id,
+        'assignment_id': assignment_id
+    }
+
+# ============= BUSINESS ROUTES - Managed Event Requests =============
+
+@api_router.post("/managed-events/request")
+async def create_managed_event_request(
+    request_data: ManagedEventRequestCreate,
+    user: Dict = Depends(get_current_user)
+):
+    """
+    Submit a managed event request (Business users only).
+    """
+    # Check if user is business
+    if user.get('user_type') not in ['business', 'entrepreneur']:
+        raise HTTPException(status_code=403, detail="Only business users can request managed events")
+    
+    # Create request
+    import uuid
+    request_id = str(uuid.uuid4())
+    
+    request_dict = request_data.dict()
+    request_dict['_id'] = request_id
+    request_dict['business_id'] = user['_id']
+    request_dict['business_name'] = user.get('business_name') or user.get('full_name') or user.get('username')
+    request_dict['status'] = 'pending'
+    request_dict['worker_assignments'] = []
+    request_dict['business_feedback'] = None
+    request_dict['worker_feedback'] = []
+    request_dict['created_at'] = datetime.utcnow()
+    request_dict['updated_at'] = datetime.utcnow()
+    request_dict['confirmed_at'] = None
+    request_dict['completed_at'] = None
+    
+    await db.managed_event_requests.insert_one(request_dict)
+    
+    # Notify admins
+    admins = await db.users.find({'is_admin': True}).to_list(100)
+    for admin in admins:
+        import uuid
+        notif_id = str(uuid.uuid4())
+        await db.notifications.insert_one({
+            '_id': notif_id,
+            'user_id': admin['_id'],
+            'type': 'NEW_MANAGED_EVENT_REQUEST',
+            'event_id': request_id,
+            'title': 'New Managed Event Request',
+            'message': f'{request_dict["business_name"]} requested a managed event: "{request_data.event_name}" on {request_data.event_date.strftime("%B %d, %Y")}',
+            'is_read': False,
+            'created_at': datetime.utcnow()
+        })
+    
+    print(f"✅ Managed event request created: {request_id} by {user['_id']}")
+    
+    return {
+        'message': 'Managed event request submitted successfully',
+        'request_id': request_id,
+        'status': 'pending'
+    }
+
+@api_router.get("/managed-events/my-requests")
+async def get_my_managed_requests(user: Dict = Depends(get_current_user)):
+    """
+    Get all managed event requests for current business user.
+    """
+    # Get requests
+    requests = await db.managed_event_requests.find({
+        'business_id': user['_id']
+    }).sort('created_at', -1).to_list(1000)
+    
+    # Format response
+    formatted_requests = []
+    for request in requests:
+        formatted_requests.append({
+            'id': request['_id'],
+            'event_name': request.get('event_name'),
+            'event_type': request.get('event_type'),
+            'event_date': request.get('event_date'),
+            'location': request.get('location'),
+            'budget': request.get('budget'),
+            'status': request.get('status'),
+            'worker_count': len(request.get('worker_assignments', [])),
+            'created_at': request.get('created_at'),
+            'updated_at': request.get('updated_at')
+        })
+    
+    return {
+        'requests': formatted_requests,
+        'total_count': len(formatted_requests)
+    }
+
+@api_router.get("/managed-events/{event_id}")
+async def get_managed_event(event_id: str, user: Dict = Depends(get_current_user)):
+    """
+    Get details of a managed event request.
+    """
+    # Get request
+    request = await db.managed_event_requests.find_one({'_id': event_id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Managed event request not found")
+    
+    # Check access (business owner or admin)
+    if request.get('business_id') != user['_id'] and not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="You don't have access to this event")
+    
+    # Enrich worker assignments (only show names for business, full details for admin)
+    enriched_assignments = []
+    for assignment in request.get('worker_assignments', []):
+        worker = await db.worker_profiles.find_one({'_id': assignment.get('worker_id')})
+        worker_user = await db.users.find_one({'_id': worker.get('user_id')}) if worker else None
+        
+        assignment_data = {
+            'role': assignment.get('role'),
+            'status': assignment.get('status'),
+            'worker_name': worker.get('stage_name') or (worker_user.get('full_name') if worker_user else 'TBD')
+        }
+        
+        # Add contact info for admin only
+        if user.get('is_admin', False):
+            assignment_data['worker_id'] = assignment.get('worker_id')
+            assignment_data['worker_email'] = worker_user.get('email') if worker_user else None
+            assignment_data['worker_phone'] = worker_user.get('phone') if worker_user else None
+        
+        enriched_assignments.append(assignment_data)
+    
+    return {
+        **request,
+        'id': request['_id'],
+        'worker_assignments': enriched_assignments
+    }
+
+@api_router.post("/managed-events/{event_id}/feedback")
+async def submit_business_feedback(
+    event_id: str,
+    feedback_data: BusinessFeedbackSubmit,
+    user: Dict = Depends(get_current_user)
+):
+    """
+    Submit feedback for a completed managed event (Business only).
+    """
+    # Get request
+    request = await db.managed_event_requests.find_one({'_id': event_id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Managed event request not found")
+    
+    # Check ownership
+    if request.get('business_id') != user['_id']:
+        raise HTTPException(status_code=403, detail="You can only submit feedback for your own events")
+    
+    # Check if event is completed
+    if request.get('status') != 'completed':
+        raise HTTPException(status_code=400, detail="Can only submit feedback for completed events")
+    
+    # Check if feedback already submitted
+    if request.get('business_feedback'):
+        raise HTTPException(status_code=400, detail="Feedback already submitted for this event")
+    
+    # Save feedback
+    feedback = feedback_data.dict()
+    feedback['submitted_at'] = datetime.utcnow()
+    
+    await db.managed_event_requests.update_one(
+        {'_id': event_id},
+        {'$set': {'business_feedback': feedback}}
+    )
+    
+    print(f"✅ Business feedback submitted for event {event_id}")
+    
+    return {
+        'message': 'Feedback submitted successfully',
+        'event_id': event_id
+    }
+
+# ============= WORKER ROUTES - In-House Assignments =============
+
+@api_router.get("/in-house/my-assignments")
+async def get_my_assignments(
+    user: Dict = Depends(get_current_user),
+    status_filter: Optional[str] = None
+):
+    """
+    Get all assignments for current in-house worker.
+    """
+    # Get worker profile
+    worker = await db.worker_profiles.find_one({'user_id': user['_id']})
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker profile not found")
+    
+    # Check if in-house
+    if not worker.get('is_in_house', False):
+        return {
+            'is_in_house': False,
+            'assignments': [],
+            'message': 'You are not currently an in-house worker'
+        }
+    
+    # Get assignments
+    query = {'worker_assignments.worker_id': worker['_id']}
+    
+    requests = await db.managed_event_requests.find(query).sort('event_date', 1).to_list(1000)
+    
+    # Format assignments
+    assignments = []
+    for request in requests:
+        # Find this worker's assignment
+        worker_assignment = next(
+            (a for a in request.get('worker_assignments', []) if a.get('worker_id') == worker['_id']),
+            None
+        )
+        
+        if worker_assignment:
+            # Apply status filter if provided
+            if status_filter and worker_assignment.get('status') != status_filter:
+                continue
+            
+            assignments.append({
+                'event_id': request['_id'],
+                'event_name': request.get('event_name'),
+                'event_type': request.get('event_type'),
+                'event_date': request.get('event_date'),
+                'location': request.get('location'),
+                'business_name': request.get('business_name'),
+                'role': worker_assignment.get('role'),
+                'status': worker_assignment.get('status'),
+                'assigned_at': worker_assignment.get('assigned_at'),
+                'requirements': request.get('requirements'),
+                'special_notes': request.get('special_notes')
+            })
+    
+    return {
+        'is_in_house': True,
+        'assignments': assignments,
+        'total_count': len(assignments),
+        'pending_count': len([a for a in assignments if a['status'] == 'pending']),
+        'accepted_count': len([a for a in assignments if a['status'] == 'accepted'])
+    }
+
+@api_router.get("/in-house/my-stats")
+async def get_my_in_house_stats(user: Dict = Depends(get_current_user)):
+    """
+    Get in-house worker stats for current user.
+    """
+    # Get worker profile
+    worker = await db.worker_profiles.find_one({'user_id': user['_id']})
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker profile not found")
+    
+    # Check if in-house
+    if not worker.get('is_in_house', False):
+        return {
+            'is_in_house': False,
+            'message': 'You are not currently an in-house worker'
+        }
+    
+    # Get assignment stats
+    total_assignments = await db.managed_event_requests.count_documents({
+        'worker_assignments.worker_id': worker['_id']
+    })
+    
+    completed_assignments = await db.managed_event_requests.count_documents({
+        'worker_assignments.worker_id': worker['_id'],
+        'status': 'completed'
+    })
+    
+    # Get decline stats
+    decline_history = worker.get('decline_history', [])
+    recent_decline_count = worker.get('total_declines_60_days', 0)
+    
+    # Non-excused declines
+    non_excused_declines = [d for d in decline_history if not d.get('excused', False)]
+    
+    return {
+        'is_in_house': True,
+        'in_house_since': worker.get('in_house_since'),
+        'stats': {
+            'total_assignments': total_assignments,
+            'completed_assignments': completed_assignments,
+            'decline_count_60_days': recent_decline_count,
+            'total_declines': len(non_excused_declines),
+            'warning_threshold': 3,
+            'at_risk': recent_decline_count >= 2
+        },
+        'warning_message': 'One more decline will remove you from in-house status' if recent_decline_count == 2 else None
+    }
+
+@api_router.post("/in-house/assignments/{assignment_id}/accept")
+async def accept_assignment(assignment_id: str, user: Dict = Depends(get_current_user)):
+    """
+    Accept an in-house worker assignment.
+    """
+    # Get worker profile
+    worker = await db.worker_profiles.find_one({'user_id': user['_id']})
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker profile not found")
+    
+    # Check if in-house
+    if not worker.get('is_in_house', False):
+        raise HTTPException(status_code=403, detail="Only in-house workers can accept assignments")
+    
+    # Find the event with this assignment
+    request = await db.managed_event_requests.find_one({
+        'worker_assignments': {
+            '$elemMatch': {
+                'worker_id': worker['_id'],
+                'status': 'pending'
+            }
+        }
+    })
+    
+    if not request:
+        raise HTTPException(status_code=404, detail="Pending assignment not found")
+    
+    # Update assignment status
+    worker_assignments = request.get('worker_assignments', [])
+    for assignment in worker_assignments:
+        if assignment.get('worker_id') == worker['_id'] and assignment.get('status') == 'pending':
+            assignment['status'] = 'accepted'
+            assignment['responded_at'] = datetime.utcnow()
+    
+    await db.managed_event_requests.update_one(
+        {'_id': request['_id']},
+        {'$set': {
+            'worker_assignments': worker_assignments,
+            'updated_at': datetime.utcnow()
+        }}
+    )
+    
+    # Check if all workers accepted - if yes, update event status to confirmed
+    all_accepted = all(a.get('status') == 'accepted' for a in worker_assignments)
+    if all_accepted and request.get('status') == 'assigning':
+        await db.managed_event_requests.update_one(
+            {'_id': request['_id']},
+            {'$set': {
+                'status': 'confirmed',
+                'confirmed_at': datetime.utcnow()
+            }}
+        )
+    
+    # Notify admin
+    admins = await db.users.find({'is_admin': True}).to_list(100)
+    for admin in admins:
+        import uuid
+        notif_id = str(uuid.uuid4())
+        await db.notifications.insert_one({
+            '_id': notif_id,
+            'user_id': admin['_id'],
+            'type': 'WORKER_ACCEPTED_ASSIGNMENT',
+            'event_id': request['_id'],
+            'title': 'Worker Accepted Assignment',
+            'message': f'{worker.get("stage_name") or user.get("full_name")} accepted assignment for "{request.get("event_name")}"',
+            'is_read': False,
+            'created_at': datetime.utcnow()
+        })
+    
+    print(f"✅ Worker {worker['_id']} accepted assignment for event {request['_id']}")
+    
+    return {
+        'message': 'Assignment accepted successfully',
+        'event_id': request['_id'],
+        'event_name': request.get('event_name'),
+        'event_date': request.get('event_date')
+    }
+
+@api_router.post("/in-house/assignments/{assignment_id}/decline")
+async def decline_assignment(
+    assignment_id: str,
+    response_data: AssignmentResponse,
+    user: Dict = Depends(get_current_user)
+):
+    """
+    Decline an in-house worker assignment.
+    """
+    # Get worker profile
+    worker = await db.worker_profiles.find_one({'user_id': user['_id']})
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker profile not found")
+    
+    # Check if in-house
+    if not worker.get('is_in_house', False):
+        raise HTTPException(status_code=403, detail="Only in-house workers can decline assignments")
+    
+    # Find the event with this assignment
+    request = await db.managed_event_requests.find_one({
+        'worker_assignments': {
+            '$elemMatch': {
+                'worker_id': worker['_id'],
+                'status': 'pending'
+            }
+        }
+    })
+    
+    if not request:
+        raise HTTPException(status_code=404, detail="Pending assignment not found")
+    
+    # Update assignment status
+    worker_assignments = request.get('worker_assignments', [])
+    for assignment in worker_assignments:
+        if assignment.get('worker_id') == worker['_id'] and assignment.get('status') == 'pending':
+            assignment['status'] = 'declined'
+            assignment['responded_at'] = datetime.utcnow()
+            assignment['decline_reason'] = response_data.decline_reason
+    
+    await db.managed_event_requests.update_one(
+        {'_id': request['_id']},
+        {'$set': {
+            'worker_assignments': worker_assignments,
+            'updated_at': datetime.utcnow()
+        }}
+    )
+    
+    # Track decline (enforce 3-declines-in-60-days policy)
+    decline_result = await track_decline(worker['_id'], assignment_id, response_data.decline_reason)
+    
+    # Notify admin of decline
+    admins = await db.users.find({'is_admin': True}).to_list(100)
+    for admin in admins:
+        import uuid
+        notif_id = str(uuid.uuid4())
+        await db.notifications.insert_one({
+            '_id': notif_id,
+            'user_id': admin['_id'],
+            'type': 'WORKER_DECLINED_ASSIGNMENT',
+            'event_id': request['_id'],
+            'title': 'Worker Declined Assignment - Reassignment Needed',
+            'message': f'{worker.get("stage_name") or user.get("full_name")} declined assignment for "{request.get("event_name")}". Reason: {response_data.decline_reason or "Not specified"}',
+            'is_read': False,
+            'created_at': datetime.utcnow()
+        })
+    
+    print(f"⚠️  Worker {worker['_id']} declined assignment for event {request['_id']}")
+    
+    return {
+        'message': 'Assignment declined',
+        'event_id': request['_id'],
+        'decline_count': decline_result['decline_count'],
+        'warning': decline_result['warning'],
+        'removed': decline_result['removed'],
+        'warning_message': 'One more decline within 60 days will remove your in-house status' if decline_result['warning'] else None
+    }
+
+@api_router.get("/in-house/decline-history")
+async def get_decline_history(user: Dict = Depends(get_current_user)):
+    """
+    Get decline history for current in-house worker.
+    """
+    # Get worker profile
+    worker = await db.worker_profiles.find_one({'user_id': user['_id']})
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker profile not found")
+    
+    # Check if in-house (or was in-house)
+    decline_history = worker.get('decline_history', [])
+    
+    if not decline_history:
+        return {
+            'decline_history': [],
+            'total_count': 0,
+            'recent_count_60_days': 0
+        }
+    
+    # Enrich with event details
+    enriched_history = []
+    for record in decline_history:
+        # Find the event
+        request = await db.managed_event_requests.find_one({
+            'worker_assignments.assignment_id': record.get('assignment_id')
+        })
+        
+        event_name = request.get('event_name') if request else 'Unknown Event'
+        event_date = request.get('event_date') if request else None
+        
+        enriched_history.append({
+            'assignment_id': record.get('assignment_id'),
+            'event_name': event_name,
+            'event_date': event_date,
+            'declined_at': record.get('declined_at'),
+            'reason': record.get('reason'),
+            'excused': record.get('excused', False),
+            'excused_reason': record.get('excused_reason')
+        })
+    
+    # Sort by date (newest first)
+    enriched_history.sort(key=lambda x: x['declined_at'], reverse=True)
+    
+    # Count recent declines
+    recent_count = await count_recent_declines(worker['_id'], 60)
+    
+    return {
+        'decline_history': enriched_history,
+        'total_count': len(enriched_history),
+        'recent_count_60_days': recent_count,
+        'is_in_house': worker.get('is_in_house', False)
+    }
+
+
 app.include_router(api_router)
 
 app.add_middleware(
