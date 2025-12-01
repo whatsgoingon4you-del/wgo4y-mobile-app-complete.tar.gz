@@ -547,6 +547,87 @@ class CheckoutRequest(BaseModel):
     promo_code: Optional[str] = None
     origin_url: str
 
+
+# ============= IN-HOUSE WORKER & MANAGED EVENT MODELS =============
+
+# Decline Record
+class DeclineRecord(BaseModel):
+    assignment_id: str
+    declined_at: datetime = Field(default_factory=datetime.utcnow)
+    reason: Optional[str] = None
+    excused: bool = False
+    excused_by: Optional[str] = None  # Admin user ID who excused
+    excused_reason: Optional[str] = None
+
+# Location for Managed Events
+class ManagedEventLocation(BaseModel):
+    address: str
+    city: str
+    state: str
+    zip_code: Optional[str] = None
+
+# Worker Assignment
+class WorkerAssignment(BaseModel):
+    worker_id: str  # worker_profile _id
+    worker_name: str
+    role: str  # DJ, Security, Event Staff, Lighting, Sound, Promoter, Other
+    status: str = 'pending'  # pending, accepted, declined
+    assigned_at: datetime = Field(default_factory=datetime.utcnow)
+    responded_at: Optional[datetime] = None
+    decline_reason: Optional[str] = None
+
+# Feedback
+class ManagedEventFeedback(BaseModel):
+    rating: int  # 1-5
+    professionalism_rating: Optional[int] = None  # 1-5
+    quality_rating: Optional[int] = None  # 1-5
+    timeliness_rating: Optional[int] = None  # 1-5
+    comments: Optional[str] = None
+    submitted_at: datetime = Field(default_factory=datetime.utcnow)
+
+# Managed Event Request (Create)
+class ManagedEventRequestCreate(BaseModel):
+    event_name: str
+    event_type: str
+    event_date: datetime
+    location: ManagedEventLocation
+    budget: str  # e.g., "5000-10000" or "Flexible"
+    requirements: str
+    estimated_attendees: int
+    special_notes: Optional[str] = None
+    is_public: bool = False  # Whether to create public event page
+
+# Managed Event Request (Update Status)
+class ManagedEventStatusUpdate(BaseModel):
+    status: str  # pending, reviewing, assigning, confirmed, in_progress, completed, cancelled
+
+# Managed Event Assignment (Admin assigns workers)
+class ManagedEventAssignment(BaseModel):
+    worker_assignments: List[WorkerAssignment]
+
+# Worker Assignment Response (Accept/Decline)
+class AssignmentResponse(BaseModel):
+    accept: bool
+    decline_reason: Optional[str] = None
+
+# Excuse Decline Request
+class ExcuseDeclineRequest(BaseModel):
+    excuse_reason: str
+
+# Managed Event Feedback (Business submits)
+class BusinessFeedbackSubmit(BaseModel):
+    rating: int  # 1-5
+    professionalism_rating: Optional[int] = None
+    quality_rating: Optional[int] = None
+    timeliness_rating: Optional[int] = None
+    comments: Optional[str] = None
+
+# Worker Feedback Submit
+class WorkerFeedbackSubmit(BaseModel):
+    rating: int  # 1-5
+    comments: Optional[str] = None
+
+
 # ============= AUTH HELPERS =============
 
 def hash_password(password: str) -> str:
