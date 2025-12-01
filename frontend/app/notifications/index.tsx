@@ -124,6 +124,26 @@ export default function NotificationsScreen() {
       if (notification.worker_id) {
         router.push(`/workers/${notification.worker_id}`);
       }
+    } else if (notification.type === 'IN_HOUSE_ASSIGNMENT') {
+      // Worker received assignment - go to in-house dashboard
+      router.push('/workers/in-house/dashboard');
+    } else if (notification.type === 'IN_HOUSE_STATUS_ADDED' || notification.type === 'IN_HOUSE_STATUS_REMOVED' || notification.type === 'IN_HOUSE_STATUS_RESTORED' || notification.type === 'IN_HOUSE_DECLINE_WARNING') {
+      // In-house status changes - go to dashboard
+      router.push('/workers/in-house/dashboard');
+    } else if (notification.type === 'WORKER_ACCEPTED_ASSIGNMENT' || notification.type === 'WORKER_DECLINED_ASSIGNMENT' || notification.type === 'NEW_MANAGED_EVENT_REQUEST') {
+      // Admin notifications for managed events
+      if (notification.event_id) {
+        router.push(`/admin/managed-events/${notification.event_id}`);
+      } else {
+        router.push('/admin/managed-events');
+      }
+    } else if (notification.type === 'MANAGED_EVENT_STATUS_UPDATED') {
+      // Business notification - managed event status changed
+      if (notification.event_id) {
+        router.push(`/events/managed/${notification.event_id}`);
+      } else {
+        router.push('/events/managed');
+      }
     } else if (notification.event_id) {
       // Navigate to event for RSVP/waitlist notifications
       router.push(`/event/${notification.event_id}`);
