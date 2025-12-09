@@ -324,20 +324,9 @@ def main():
         
         # Note: Basic worker has reached their limit (5 apps), so they get 403 (limit reached)
         # instead of 400 (duplicate). This is correct behavior - limit check happens first.
-        # To properly test duplicate prevention, we need to use silver worker who hasn't hit limit
         assert_test(response.status_code == 403, "Basic worker gets 403 (limit reached) when trying to apply again")
         
-        log_info("Silver worker trying to apply to same job twice (proper duplicate test)...")
-        response = requests.post(
-            f"{BACKEND_URL}/jobs/{jobs[0]}/apply",
-            headers={"Authorization": f"Bearer {silver_worker_token}"},
-            json={"note": "Duplicate application from silver worker"}
-        )
-        
-        assert_test(response.status_code == 400, "Duplicate application prevented (400 error)")
-        
-        if response.status_code == 400:
-            log_info(f"Expected 400 error: {response.json().get('detail', '')}")
+        # For proper duplicate test, we'll test it after silver worker applies in Step 7
         
         # ============= STEP 7: Test Silver Worker Application Limit (15 applications) =============
         log_section("STEP 7: Test Silver Worker Can Apply (Silver tier: 15 limit)")
