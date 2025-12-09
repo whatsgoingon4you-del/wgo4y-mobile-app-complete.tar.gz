@@ -44,6 +44,8 @@ export default {
           backgroundColor: '#000',
         },
       ],
+      'expo-font',
+      'expo-web-browser',
     ],
     experiments: {
       typedRoutes: true,
