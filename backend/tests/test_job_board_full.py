@@ -350,6 +350,19 @@ def main():
         
         assert_test(len(silver_applications) == 7, "Silver worker submitted 7 applications (under 15 limit)")
         
+        # Now test duplicate application with silver worker
+        log_info("Silver worker trying to apply to same job twice (duplicate test)...")
+        response = requests.post(
+            f"{BACKEND_URL}/jobs/{jobs[0]}/apply",
+            headers={"Authorization": f"Bearer {silver_worker_token}"},
+            json={"note": "Duplicate application"}
+        )
+        
+        assert_test(response.status_code == 400, "Duplicate application prevented (400 error)")
+        
+        if response.status_code == 400:
+            log_info(f"Expected 400 error: {response.json().get('detail', '')}")
+        
         # ============= STEP 8: Test View Job Applicants =============
         log_section("STEP 8: Test View Job Applicants")
         
