@@ -3317,6 +3317,28 @@ async def apply_to_job(
             detail="Only approved workers can apply to jobs. Please apply to the Worker Network first."
         )
     
+    # Check tier-based application limit
+    from datetime import datetime, timezone
+    from tier_limits import can_apply_to_job, get_job_application_limit
+    
+    # Count applications in current month
+    now = datetime.now(timezone.utc)
+    start_of_month = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    
+    applications_this_month = await db.job_applications.count_documents({
+        'worker_id': user['_id'],
+        'created_at': {'$gte': start_of_month}
+    })
+    
+    user_tier = user.get('membership_tier', 'basic')
+    
+    if not can_apply_to_job(user_tier, applications_this_month):
+        limit = get_job_application_limit(user_tier)
+        raise HTTPException(
+            status_code=403,
+            detail=f"You have reached your monthly application limit ({limit} applications). Upgrade your tier to apply to more jobs."
+        )
+    
     # Check if job exists
     job = await db.job_postings.find_one({'_id': job_id})
     if not job:
