@@ -3539,8 +3539,10 @@ async def get_my_applications(
                     'title': job['title'],
                     'role': job['role'],
                     'owner_name': job['owner_name'],
-                    'location': job['location'],
-                    'date': job['date'].isoformat() if isinstance(job.get('date'), datetime) else job.get('date'),
+                    'city': job.get('city'),
+                    'state': job.get('state'),
+                    'location': f"{job.get('city', '')}, {job.get('state', '')}",
+                    'event_date': job.get('event_date'),
                     'pay': job.get('pay'),
                     'status': job['status']
                 },
