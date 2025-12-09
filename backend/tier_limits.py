@@ -50,6 +50,20 @@ TIER_LIMITS = {
             'rsvps_per_month': 999,  # Unlimited (use high number for calculations)
             'unlimited_rsvps': True,
         },
+    },
+    'worker': {
+        'basic': {
+            'job_applications_per_month': 5,
+            'unlimited_applications': False,
+        },
+        'silver': {
+            'job_applications_per_month': 15,
+            'unlimited_applications': False,
+        },
+        'gold': {
+            'job_applications_per_month': 999,  # Unlimited
+            'unlimited_applications': True,
+        },
     }
 }
 
@@ -138,3 +152,21 @@ def is_near_limit(current: int, limit: int, threshold: int = 2):
     if limit >= 999:  # Unlimited
         return False
     return (limit - current) <= threshold and current < limit
+
+def get_job_application_limit(membership_tier: str):
+    """Get job application limit per month for workers"""
+    limits = get_tier_limits('worker', membership_tier)
+    if not limits:
+        return 5  # Default to basic tier
+    
+    if limits.get('unlimited_applications'):
+        return 999  # Return high number instead of string
+    
+    return limits.get('job_applications_per_month', 5)
+
+def can_apply_to_job(membership_tier: str, applications_this_month: int):
+    """Check if worker can apply to another job this month"""
+    limit = get_job_application_limit(membership_tier)
+    if limit >= 999:  # Unlimited
+        return True
+    return applications_this_month < limit
