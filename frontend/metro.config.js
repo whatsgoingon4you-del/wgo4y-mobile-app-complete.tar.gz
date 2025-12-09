@@ -43,12 +43,21 @@ config.server = {
   },
 };
 
-// // Exclude unnecessary directories from file watching
-// config.watchFolders = [__dirname];
-// config.resolver.blacklistRE = /(.*)\/(__tests__|android|ios|build|dist|.git|node_modules\/.*\/android|node_modules\/.*\/ios|node_modules\/.*\/windows|node_modules\/.*\/macos)(\/.*)?$/;
+// Exclude unnecessary directories from file watching to reduce file watcher usage
+config.watchFolders = [
+  path.join(__dirname, 'app'),
+  path.join(__dirname, 'assets'),
+  path.join(__dirname, 'components'),
+];
 
-// // Alternative: use a more aggressive exclusion pattern
-// config.resolver.blacklistRE = /node_modules\/.*\/(android|ios|windows|macos|__tests__|\.git|.*\.android\.js|.*\.ios\.js)$/;
+config.resolver.blockList = [
+  /node_modules\/.*\/(android|ios|windows|macos)/,
+  /__tests__/,
+  /\.git/,
+  /.*\.android\.js$/,
+  /.*\.ios\.js$/,
+  /.*\.native\.js$/,
+];
 
 // Reduce the number of workers to decrease resource usage
 config.maxWorkers = 2;
