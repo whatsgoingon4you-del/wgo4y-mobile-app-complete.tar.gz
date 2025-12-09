@@ -9,8 +9,8 @@ import json
 import time
 from datetime import datetime
 
-# Backend URL from environment
-BACKEND_URL = "https://218531ef-b8b5-427e-9d31-42563a974bff.preview.emergentagent.com/api"
+# Backend URL - using localhost for testing
+BACKEND_URL = "http://localhost:8001/api"
 
 # Test data
 timestamp = int(time.time())
