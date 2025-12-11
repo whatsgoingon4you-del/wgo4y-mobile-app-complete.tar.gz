@@ -4984,6 +4984,194 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.on_event("startup")
+async def startup_populate_database():
+    """Automatically populate database on startup if empty"""
+    try:
+        # Check if database needs population
+        user_count = await db.users.count_documents({})
+        
+        if user_count < 5:  # If less than 5 users, populate
+            print("="*80)
+            print("🚀 AUTO-POPULATING PRODUCTION DATABASE")
+            print("="*80)
+            
+            from passlib.context import CryptContext
+            pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+            hashed_pw = pwd_context.hash("Test1234")
+            
+            R2 = "https://pub-bfa7ee4cef34458990f1d94545974968.r2.dev"
+            
+            # Create 7 essential real profiles
+            profiles = [
+                {
+                    '_id': str(uuid.uuid4()),
+                    'username': 'dboy_stackalini_rap_producer_s',
+                    'email': 'dboy_stackalini_rap_producer_s@wgo4y.com',
+                    'password_hash': hashed_pw,
+                    'full_name': 'Dboy Stackalini',
+                    'user_type': 'entrepreneur',
+                    'membership_tier': 'gold',
+                    'is_demo_profile': False,
+                    'onboarding_completed': True,
+                    'photo_url': f'{R2}/img8.jpg',
+                    'stage_name': 'Dboy Stackalini',
+                    'occupation': 'DJ/Producer/Song Writer',
+                    'bio': 'Professional DJ and music producer',
+                    'city': 'Las Vegas',
+                    'state': 'Nevada',
+                    'services': ['DJ', 'Music Production'],
+                    'portfolio_photos': [f'{R2}/img8.jpg'],
+                    'portfolio_videos': [],
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    '_id': str(uuid.uuid4()),
+                    'username': 'd_petty',
+                    'email': 'd_petty@wgo4y.com',
+                    'password_hash': hashed_pw,
+                    'full_name': 'D.Petty',
+                    'user_type': 'entrepreneur',
+                    'membership_tier': 'silver',
+                    'is_demo_profile': False,
+                    'onboarding_completed': True,
+                    'photo_url': f'{R2}/IMG_6465.jpg',
+                    'stage_name': 'D.Petty',
+                    'occupation': 'Entertainer',
+                    'city': 'Las Vegas',
+                    'state': 'Nevada',
+                    'services': ['Entertainment'],
+                    'portfolio_photos': [f'{R2}/IMG_6465.jpg'],
+                    'portfolio_videos': [],
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    '_id': str(uuid.uuid4()),
+                    'username': 'the_lace_mirror',
+                    'email': 'lacemirror@wgo4y.com',
+                    'password_hash': hashed_pw,
+                    'full_name': 'The Lace Mirror',
+                    'user_type': 'entrepreneur',
+                    'membership_tier': 'silver',
+                    'is_demo_profile': False,
+                    'onboarding_completed': True,
+                    'photo_url': f'{R2}/The%20Lace%20Nerd%20profile%20image.jpeg',
+                    'stage_name': 'The Lace Mirror',
+                    'occupation': 'Visual Artist',
+                    'city': 'Las Vegas',
+                    'state': 'Nevada',
+                    'services': ['Visual Arts', 'Design'],
+                    'portfolio_photos': [f'{R2}/The%20Lace%20Nerd%20profile%20image.jpeg'],
+                    'portfolio_videos': [],
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    '_id': str(uuid.uuid4()),
+                    'username': 'la_mansion_premier_event_venue',
+                    'email': 'la_mansion_premier_event_venue@wgo4y.com',
+                    'password_hash': hashed_pw,
+                    'full_name': 'La Mansion',
+                    'user_type': 'business',
+                    'membership_tier': 'gold',
+                    'is_demo_profile': False,
+                    'onboarding_completed': True,
+                    'photo_url': f'{R2}/La-Mansion.png',
+                    'business_name': 'La Mansion',
+                    'business_type': 'nightclub',
+                    'city': 'Las Vegas',
+                    'state': 'Nevada',
+                    'venue_photos': [f'{R2}/La-Mansion.png'],
+                    'amenities': ['VIP', 'Full Bar', 'DJ'],
+                    'description': 'Premier event venue',
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    '_id': str(uuid.uuid4()),
+                    'username': 'mcclellan_tavern',
+                    'email': 'info@mcclellans.com',
+                    'password_hash': hashed_pw,
+                    'full_name': "McClellan's Tavern",
+                    'user_type': 'business',
+                    'membership_tier': 'gold',
+                    'is_demo_profile': False,
+                    'onboarding_completed': True,
+                    'photo_url': f'{R2}/McClellans.jpg',
+                    'business_name': "McClellan's Tavern",
+                    'business_type': 'bar_restaurant',
+                    'city': 'Las Vegas',
+                    'state': 'Nevada',
+                    'venue_photos': [f'{R2}/McClellans.jpg'],
+                    'amenities': ['Full Bar', 'Restaurant'],
+                    'description': 'Classic tavern',
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    '_id': str(uuid.uuid4()),
+                    'username': 'rack_em_up',
+                    'email': 'info@rackemup.com',
+                    'password_hash': hashed_pw,
+                    'full_name': 'Rack Em Up',
+                    'user_type': 'business',
+                    'membership_tier': 'gold',
+                    'is_demo_profile': False,
+                    'onboarding_completed': True,
+                    'photo_url': f'{R2}/6-copy.jpg',
+                    'business_name': 'Rack Em Up',
+                    'business_type': 'entertainment',
+                    'city': 'Las Vegas',
+                    'state': 'Nevada',
+                    'venue_photos': [f'{R2}/6-copy.jpg'],
+                    'amenities': ['Pool Tables', 'Bar'],
+                    'description': 'Billiards venue',
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    '_id': str(uuid.uuid4()),
+                    'username': 'one_mansion',
+                    'email': 'info@onemansion.com',
+                    'password_hash': hashed_pw,
+                    'full_name': 'One Mansion',
+                    'user_type': 'business',
+                    'membership_tier': 'gold',
+                    'is_demo_profile': False,
+                    'onboarding_completed': True,
+                    'photo_url': f'{R2}/La-Mansion.png',
+                    'business_name': 'One Mansion',
+                    'business_type': 'nightclub',
+                    'city': 'Las Vegas',
+                    'state': 'Nevada',
+                    'venue_photos': [f'{R2}/La-Mansion.png'],
+                    'amenities': ['VIP', 'DJ', 'Dance Floor'],
+                    'description': 'Upscale nightclub',
+                    'created_at': datetime.now(timezone.utc)
+                }
+            ]
+            
+            for profile in profiles:
+                await db.users.insert_one(profile)
+                print(f"✅ Created: {profile['full_name']}")
+            
+            # Configure logo
+            await db.app_config.update_one(
+                {'_id': 'branding'},
+                {'$set': {
+                    'logo_url': f'{R2}/WGO4Y%20Logo.png',
+                    'app_name': "What's Going On 4 You",
+                    'app_short_name': 'WGO4Y'
+                }},
+                upsert=True
+            )
+            
+            print(f"✅ Created 7 real profiles with password: Test1234")
+            print("="*80)
+        else:
+            print(f"✅ Database already has {user_count} users - skipping auto-population")
+            
+    except Exception as e:
+        print(f"⚠️  Startup population error: {str(e)}")
+        # Don't fail startup if population fails
+        pass
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
