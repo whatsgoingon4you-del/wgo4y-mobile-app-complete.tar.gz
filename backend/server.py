@@ -776,9 +776,6 @@ async def login(credentials: UserLogin):
         print(f"ERROR: No password field found for user {user.get('username')}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    print(f"DEBUG: stored_password exists: {bool(stored_password)}, length: {len(stored_password) if stored_password else 0}")
-    print(f"DEBUG: input password: '{credentials.password}'")
-    
     password_valid = verify_password(credentials.password, stored_password)
     print(f"Password valid: {password_valid}")
     
