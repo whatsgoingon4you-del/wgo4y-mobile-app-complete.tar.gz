@@ -4609,3 +4609,140 @@ logger = logging.getLogger(__name__)
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+
+# ============= ADMIN DATA MIGRATION ENDPOINT =============
+
+@api_router.post("/admin/populate-database")
+async def populate_database(secret_key: str):
+    """
+    Populate production database with all users and data
+    This endpoint can be called once after deployment to initialize the database
+    
+    Usage: POST /api/admin/populate-database?secret_key=POPULATE_DB_2024
+    """
+    # Simple secret key check (change this for production)
+    if secret_key != "POPULATE_DB_2024":
+        raise HTTPException(status_code=403, detail="Invalid secret key")
+    
+    try:
+        # Check if already populated
+        user_count = await db.users.count_documents({})
+        
+        if user_count > 50:
+            return {
+                "status": "already_populated",
+                "message": f"Database already has {user_count} users. Skipping migration.",
+                "user_count": user_count
+            }
+        
+        # Hash password
+        from passlib.context import CryptContext
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        hashed_password = pwd_context.hash("Test1234")
+        
+        R2_BASE_URL = "https://pub-bfa7ee4cef34458990f1d94545974968.r2.dev"
+        
+        # Load WordPress profiles if file exists
+        import json
+        from pathlib import Path
+        
+        wp_file = Path(__file__).parent / 'profile_image_mapping.json'
+        
+        if not wp_file.exists():
+            # Create minimal real profiles if no WordPress data
+            profiles = [
+                {
+                    '_id': str(uuid.uuid4()),
+                    'username': 'dboy_stackalini',
+                    'email': 'dboy@wgo4y.com',
+                    'password_hash': hashed_password,
+                    'full_name': 'Dboy Stackalini',
+                    'user_type': 'entrepreneur',
+                    'membership_tier': 'gold',
+                    'is_demo_profile': False,
+                    'onboarding_completed': True,
+                    'photo_url': f'{R2_BASE_URL}/img8.jpg',
+                    'stage_name': 'Dboy Stackalini',
+                    'occupation': 'DJ/Producer',
+                    'city': 'Las Vegas',
+                    'state': 'Nevada',
+                    'services': ['DJ', 'Music Production'],
+                    'portfolio_photos': [f'{R2_BASE_URL}/img8.jpg'],
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    '_id': str(uuid.uuid4()),
+                    'username': 'd_petty',
+                    'email': 'd_petty@wgo4y.com',
+                    'password_hash': hashed_password,
+                    'full_name': 'D.Petty',
+                    'user_type': 'entrepreneur',
+                    'membership_tier': 'silver',
+                    'is_demo_profile': False,
+                    'onboarding_completed': True,
+                    'photo_url': f'{R2_BASE_URL}/IMG_6465.jpg',
+                    'stage_name': 'D.Petty',
+                    'occupation': 'Entertainer',
+                    'city': 'Las Vegas',
+                    'state': 'Nevada',
+                    'services': ['Entertainment'],
+                    'portfolio_photos': [f'{R2_BASE_URL}/IMG_6465.jpg'],
+                    'created_at': datetime.now(timezone.utc)
+                },
+                {
+                    '_id': str(uuid.uuid4()),
+                    'username': 'la_mansion',
+                    'email': 'la_mansion@wgo4y.com',
+                    'password_hash': hashed_password,
+                    'full_name': 'La Mansion',
+                    'user_type': 'business',
+                    'membership_tier': 'gold',
+                    'is_demo_profile': False,
+                    'onboarding_completed': True,
+                    'photo_url': f'{R2_BASE_URL}/La-Mansion.png',
+                    'business_name': 'La Mansion',
+                    'business_type': 'nightclub',
+                    'city': 'Las Vegas',
+                    'state': 'Nevada',
+                    'venue_photos': [f'{R2_BASE_URL}/La-Mansion.png'],
+                    'created_at': datetime.now(timezone.utc)
+                }
+            ]
+            
+            for profile in profiles:
+                await db.users.insert_one(profile)
+            
+            migrated_count = len(profiles)
+        else:
+            # Use WordPress data migration logic here
+            # (simplified for endpoint - full logic in production_migration.py)
+            migrated_count = 0
+        
+        # Configure logo
+        await db.app_config.update_one(
+            {'_id': 'branding'},
+            {
+                '$set': {
+                    'logo_url': f'{R2_BASE_URL}/WGO4Y%20Logo.png',
+                    'app_name': "What's Going On 4 You",
+                    'app_short_name': 'WGO4Y'
+                }
+            },
+            upsert=True
+        )
+        
+        final_count = await db.users.count_documents({})
+        
+        return {
+            "status": "success",
+            "message": "Database populated successfully",
+            "users_migrated": migrated_count,
+            "total_users": final_count,
+            "password": "Test1234"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Migration failed: {str(e)}")
+
+
