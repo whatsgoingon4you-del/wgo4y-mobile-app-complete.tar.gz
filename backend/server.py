@@ -728,20 +728,43 @@ async def register(user_data: UserRegister):
 @api_router.post("/auth/login")
 async def login(credentials: UserLogin):
     print(f"Login attempt for username: {credentials.username}")
+    
+    # Try multiple lookup strategies for flexible login (email, username, full name, stage name, business name)
+    user = None
+    
+    # 1. Try exact username match
     user = await db.users.find_one({'username': credentials.username})
     
+    # 2. Try case-insensitive username
     if not user:
-        print(f"User not found: {credentials.username}")
-        # Also try case-insensitive search
         user = await db.users.find_one({'username': {'$regex': f'^{credentials.username}$', '$options': 'i'}})
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    print(f"User found: {user['username']}")
-    # Database field is 'password', not 'password_hash'
+    # 3. Try email
+    if not user:
+        user = await db.users.find_one({'email': credentials.username})
+    
+    # 4. Try full name (case-insensitive, allows spaces)
+    if not user:
+        user = await db.users.find_one({'full_name': {'$regex': f'^{credentials.username}$', '$options': 'i'}})
+    
+    # 5. Try stage name for entrepreneurs
+    if not user:
+        user = await db.users.find_one({'stage_name': {'$regex': f'^{credentials.username}$', '$options': 'i'}})
+    
+    # 6. Try business name for businesses
+    if not user:
+        user = await db.users.find_one({'business_name': {'$regex': f'^{credentials.username}$', '$options': 'i'}})
+    
+    if not user:
+        print(f"User not found with any identifier: {credentials.username}")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    print(f"User found: {user.get('full_name', user.get('username'))}")
+    
+    # Get password hash
     stored_password = user.get('password') or user.get('password_hash')
     if not stored_password:
-        print(f"ERROR: No password field found for user {user['username']}")
+        print(f"ERROR: No password field found for user {user.get('username')}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     print(f"DEBUG: stored_password exists: {bool(stored_password)}, length: {len(stored_password) if stored_password else 0}")
