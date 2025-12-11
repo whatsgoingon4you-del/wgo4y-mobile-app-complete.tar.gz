@@ -729,34 +729,41 @@ async def register(user_data: UserRegister):
 async def login(credentials: UserLogin):
     print(f"Login attempt for username: {credentials.username}")
     
-    # Try multiple lookup strategies for flexible login (email, username, full name, stage name, business name)
+    # Normalize the input (trim spaces)
+    search_term = credentials.username.strip()
+    
+    # Try multiple lookup strategies for flexible login
     user = None
     
     # 1. Try exact username match
-    user = await db.users.find_one({'username': credentials.username})
+    user = await db.users.find_one({'username': search_term})
     
     # 2. Try case-insensitive username
     if not user:
-        user = await db.users.find_one({'username': {'$regex': f'^{credentials.username}$', '$options': 'i'}})
+        user = await db.users.find_one({'username': {'$regex': f'^{re.escape(search_term)}$', '$options': 'i'}})
     
     # 3. Try email
     if not user:
-        user = await db.users.find_one({'email': credentials.username})
+        user = await db.users.find_one({'email': search_term})
     
-    # 4. Try full name (case-insensitive, allows spaces)
+    # 4. Try email case-insensitive
     if not user:
-        user = await db.users.find_one({'full_name': {'$regex': f'^{credentials.username}$', '$options': 'i'}})
+        user = await db.users.find_one({'email': {'$regex': f'^{re.escape(search_term)}$', '$options': 'i'}})
     
-    # 5. Try stage name for entrepreneurs
+    # 5. Try full name (exact match, case-insensitive)
     if not user:
-        user = await db.users.find_one({'stage_name': {'$regex': f'^{credentials.username}$', '$options': 'i'}})
+        user = await db.users.find_one({'full_name': {'$regex': f'^{re.escape(search_term)}$', '$options': 'i'}})
     
-    # 6. Try business name for businesses
+    # 6. Try stage name for entrepreneurs
     if not user:
-        user = await db.users.find_one({'business_name': {'$regex': f'^{credentials.username}$', '$options': 'i'}})
+        user = await db.users.find_one({'stage_name': {'$regex': f'^{re.escape(search_term)}$', '$options': 'i'}})
+    
+    # 7. Try business name for businesses
+    if not user:
+        user = await db.users.find_one({'business_name': {'$regex': f'^{re.escape(search_term)}$', '$options': 'i'}})
     
     if not user:
-        print(f"User not found with any identifier: {credentials.username}")
+        print(f"User not found with any identifier: {search_term}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     print(f"User found: {user.get('full_name', user.get('username'))}")
@@ -774,7 +781,7 @@ async def login(credentials: UserLogin):
     print(f"Password valid: {password_valid}")
     
     if not password_valid:
-        print(f"Password verification failed for user: {credentials.username}")
+        print(f"Password verification failed for user: {search_term}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     token = create_token(user['_id'])
