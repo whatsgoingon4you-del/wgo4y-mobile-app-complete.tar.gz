@@ -727,6 +727,8 @@ async def register(user_data: UserRegister):
 
 @api_router.post("/auth/login")
 async def login(credentials: UserLogin):
+    import re
+    
     print(f"Login attempt for username: {credentials.username}")
     
     # Normalize the input (trim spaces)
