@@ -4589,6 +4589,148 @@ async def stripe_webhook(request: Request):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+
+# ============= ADMIN DATA MIGRATION ENDPOINT =============
+
+@api_router.post("/admin/migrate-production-data")
+async def migrate_production_data(secret_key: str):
+    """
+    ONE-TIME migration endpoint to populate production database
+    Call this immediately after deployment to load all users and data
+    
+    Usage: POST /api/admin/migrate-production-data?secret_key=MIGRATE2024
+    """
+    if secret_key != "MIGRATE2024":
+        raise HTTPException(status_code=403, detail="Invalid secret key")
+    
+    try:
+        # Check if already run
+        existing_count = await db.users.count_documents({})
+        
+        if existing_count > 50:
+            return {
+                "status": "already_migrated",
+                "message": f"Database already has {existing_count} users",
+                "user_count": existing_count
+            }
+        
+        # Import required modules
+        from passlib.context import CryptContext
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        hashed_pw = pwd_context.hash("Test1234")
+        
+        R2 = "https://pub-bfa7ee4cef34458990f1d94545974968.r2.dev"
+        
+        # Create essential real profiles
+        users_to_create = [
+            {
+                '_id': str(uuid.uuid4()), 'username': 'dboy_stackalini_rap_producer_s',
+                'email': 'dboy_stackalini_rap_producer_s@wgo4y.com', 'password_hash': hashed_pw,
+                'full_name': 'Dboy Stackalini', 'user_type': 'entrepreneur',
+                'membership_tier': 'gold', 'is_demo_profile': False, 'onboarding_completed': True,
+                'photo_url': f'{R2}/img8.jpg', 'stage_name': 'Dboy Stackalini',
+                'occupation': 'DJ/Producer', 'city': 'Las Vegas', 'state': 'Nevada',
+                'services': ['DJ', 'Music Production'], 'portfolio_photos': [f'{R2}/img8.jpg'],
+                'portfolio_videos': [], 'bio': 'Professional DJ and music producer',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                '_id': str(uuid.uuid4()), 'username': 'd_petty',
+                'email': 'd_petty@wgo4y.com', 'password_hash': hashed_pw,
+                'full_name': 'D.Petty', 'user_type': 'entrepreneur',
+                'membership_tier': 'silver', 'is_demo_profile': False, 'onboarding_completed': True,
+                'photo_url': f'{R2}/IMG_6465.jpg', 'stage_name': 'D.Petty',
+                'occupation': 'Entertainer', 'city': 'Las Vegas', 'state': 'Nevada',
+                'services': ['Entertainment'], 'portfolio_photos': [f'{R2}/IMG_6465.jpg'],
+                'portfolio_videos': [], 'created_at': datetime.now(timezone.utc)
+            },
+            {
+                '_id': str(uuid.uuid4()), 'username': 'the_lace_mirror',
+                'email': 'lacemirror@wgo4y.com', 'password_hash': hashed_pw,
+                'full_name': 'The Lace Mirror', 'user_type': 'entrepreneur',
+                'membership_tier': 'silver', 'is_demo_profile': False, 'onboarding_completed': True,
+                'photo_url': f'{R2}/The%20Lace%20Nerd%20profile%20image.jpeg',
+                'stage_name': 'The Lace Mirror', 'occupation': 'Visual Artist',
+                'city': 'Las Vegas', 'state': 'Nevada', 'services': ['Visual Arts', 'Design'],
+                'portfolio_photos': [f'{R2}/The%20Lace%20Nerd%20profile%20image.jpeg'],
+                'portfolio_videos': [], 'created_at': datetime.now(timezone.utc)
+            },
+            {
+                '_id': str(uuid.uuid4()), 'username': 'la_mansion_premier_event_venue',
+                'email': 'la_mansion_premier_event_venue@wgo4y.com', 'password_hash': hashed_pw,
+                'full_name': 'La Mansion - Premier Event Venue', 'user_type': 'business',
+                'membership_tier': 'gold', 'is_demo_profile': False, 'onboarding_completed': True,
+                'photo_url': f'{R2}/La-Mansion.png', 'business_name': 'La Mansion',
+                'business_type': 'nightclub', 'city': 'Las Vegas', 'state': 'Nevada',
+                'venue_photos': [f'{R2}/La-Mansion.png'], 'amenities': ['VIP', 'Full Bar', 'DJ'],
+                'description': 'Premier event venue and nightclub',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                '_id': str(uuid.uuid4()), 'username': 'mcclellan_tavern',
+                'email': 'info@mcclellans.com', 'password_hash': hashed_pw,
+                'full_name': "McClellan's Tavern", 'user_type': 'business',
+                'membership_tier': 'gold', 'is_demo_profile': False, 'onboarding_completed': True,
+                'photo_url': f'{R2}/McClellans.jpg', 'business_name': "McClellan's Tavern",
+                'business_type': 'bar_restaurant', 'city': 'Las Vegas', 'state': 'Nevada',
+                'venue_photos': [f'{R2}/McClellans.jpg'], 'amenities': ['Full Bar', 'Restaurant'],
+                'description': 'Classic tavern with great atmosphere',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                '_id': str(uuid.uuid4()), 'username': 'rack_em_up',
+                'email': 'info@rackemup.com', 'password_hash': hashed_pw,
+                'full_name': 'Rack Em Up', 'user_type': 'business',
+                'membership_tier': 'gold', 'is_demo_profile': False, 'onboarding_completed': True,
+                'photo_url': f'{R2}/6-copy.jpg', 'business_name': 'Rack Em Up',
+                'business_type': 'entertainment', 'city': 'Las Vegas', 'state': 'Nevada',
+                'venue_photos': [f'{R2}/6-copy.jpg'], 'amenities': ['Pool Tables', 'Bar'],
+                'description': 'Premier billiards and entertainment',
+                'created_at': datetime.now(timezone.utc)
+            },
+            {
+                '_id': str(uuid.uuid4()), 'username': 'one_mansion',
+                'email': 'info@onemansion.com', 'password_hash': hashed_pw,
+                'full_name': 'One Mansion', 'user_type': 'business',
+                'membership_tier': 'gold', 'is_demo_profile': False, 'onboarding_completed': True,
+                'photo_url': f'{R2}/La-Mansion.png', 'business_name': 'One Mansion',
+                'business_type': 'nightclub', 'city': 'Las Vegas', 'state': 'Nevada',
+                'venue_photos': [f'{R2}/La-Mansion.png'], 'amenities': ['VIP', 'DJ', 'Dance Floor'],
+                'description': 'Upscale nightclub and event venue',
+                'created_at': datetime.now(timezone.utc)
+            }
+        ]
+        
+        # Insert all users
+        for user in users_to_create:
+            await db.users.insert_one(user)
+        
+        # Configure logo and branding
+        await db.app_config.insert_one({
+            '_id': 'branding',
+            'logo_url': f'{R2}/WGO4Y%20Logo.png',
+            'app_name': "What's Going On 4 You",
+            'app_short_name': 'WGO4Y'
+        })
+        
+        return {
+            "status": "success",
+            "users_created": len(users_to_create),
+            "total_users": await db.users.count_documents({}),
+            "password": "Test1234",
+            "message": "Production database populated successfully"
+        }
+        
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "message": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+
 # Include router
 app.include_router(api_router)
 
