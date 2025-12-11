@@ -620,6 +620,57 @@ def require_premium_tier(user: Dict[str, Any], feature_name: str = "This feature
             detail=f"{feature_name} requires an upgraded membership. Your current tier: {tier}. Please upgrade to Appreciation, Networking, Gold, or Silver tier to access this feature."
         )
 
+
+# ============= HEALTH CHECK & ROOT ENDPOINTS =============
+
+@app.get("/")
+async def root():
+    """Root endpoint - API information"""
+    return {
+        "app": "WGO4Y API",
+        "version": "2.0",
+        "status": "operational",
+        "docs": "/docs",
+        "api_prefix": "/api"
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Kubernetes probes"""
+    try:
+        # Test database connection
+        await db.command('ping')
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e)
+        }
+
+@api_router.get("/")
+async def api_root():
+    """API root endpoint - returns 200 OK for health checks"""
+    return {
+        "message": "WGO4Y API",
+        "version": "2.0",
+        "status": "ok"
+    }
+
+@api_router.get("/health")
+async def api_health():
+    """API health check endpoint"""
+    try:
+        await db.command('ping')
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Database unhealthy: {str(e)}")
+
+
 # ============= AUTH ROUTES =============
 
 @api_router.post("/auth/register")
