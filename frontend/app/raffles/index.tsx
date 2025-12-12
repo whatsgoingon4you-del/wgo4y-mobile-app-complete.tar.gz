@@ -148,7 +148,9 @@ export default function RafflesPage() {
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Active Raffles</Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity onPress={() => router.push('/raffles/create')} style={styles.addButton}>
+          <Ionicons name="add-circle" size={28} color="#1565FF" />
+        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -193,6 +195,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#000',
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listContent: {
     padding: 16,
