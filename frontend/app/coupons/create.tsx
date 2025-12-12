@@ -265,7 +265,7 @@ export default function CreateCouponScreen() {
               </View>
             </View>
 
-            {showFromPicker && (
+            {showFromPicker && Platform.OS !== 'web' && (
               <DateTimePicker
                 value={validFrom}
                 mode="date"
@@ -275,7 +275,7 @@ export default function CreateCouponScreen() {
               />
             )}
 
-            {showUntilPicker && (
+            {showUntilPicker && Platform.OS !== 'web' && (
               <DateTimePicker
                 value={validUntil}
                 mode="date"
@@ -283,6 +283,53 @@ export default function CreateCouponScreen() {
                 onChange={onUntilDateChange}
                 minimumDate={validFrom}
               />
+            )}
+            
+            {/* Web fallback for date pickers */}
+            {Platform.OS === 'web' && showFromPicker && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Select Valid From Date</Text>
+                <input
+                  type="date"
+                  value={validFrom.toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    setValidFrom(newDate);
+                    setShowFromPicker(false);
+                  }}
+                  min={new Date().toISOString().split('T')[0]}
+                  style={{
+                    padding: '12px',
+                    fontSize: '16px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    width: '100%'
+                  }}
+                />
+              </View>
+            )}
+            
+            {Platform.OS === 'web' && showUntilPicker && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Select Valid Until Date</Text>
+                <input
+                  type="date"
+                  value={validUntil.toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    setValidUntil(newDate);
+                    setShowUntilPicker(false);
+                  }}
+                  min={validFrom.toISOString().split('T')[0]}
+                  style={{
+                    padding: '12px',
+                    fontSize: '16px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    width: '100%'
+                  }}
+                />
+              </View>
             )}
           </View>
 

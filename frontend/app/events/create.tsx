@@ -460,7 +460,7 @@ export default function CreateEventScreen() {
               </TouchableOpacity>
             </View>
 
-            {showDatePicker && (
+            {showDatePicker && Platform.OS !== 'web' && (
               <DateTimePicker
                 value={date}
                 mode="date"
@@ -470,13 +470,65 @@ export default function CreateEventScreen() {
               />
             )}
 
-            {showTimePicker && (
+            {showTimePicker && Platform.OS !== 'web' && (
               <DateTimePicker
                 value={date}
                 mode="time"
                 display="default"
                 onChange={onTimeChange}
               />
+            )}
+            
+            {/* Web fallback for date picker */}
+            {Platform.OS === 'web' && showDatePicker && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Select Event Date</Text>
+                <input
+                  type="date"
+                  value={date.toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    newDate.setHours(date.getHours());
+                    newDate.setMinutes(date.getMinutes());
+                    setDate(newDate);
+                    setShowDatePicker(false);
+                  }}
+                  min={new Date().toISOString().split('T')[0]}
+                  style={{
+                    padding: '12px',
+                    fontSize: '16px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    width: '100%'
+                  }}
+                />
+              </View>
+            )}
+            
+            {/* Web fallback for time picker */}
+            {Platform.OS === 'web' && showTimePicker && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Select Event Time</Text>
+                <input
+                  type="time"
+                  value={`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`}
+                  onChange={(e) => {
+                    const [hours, minutes] = e.target.value.split(':');
+                    const newDate = new Date(date);
+                    newDate.setHours(parseInt(hours));
+                    newDate.setMinutes(parseInt(minutes));
+                    setDate(newDate);
+                    setShowTimePicker(false);
+                  }}
+                  style={{
+                    padding: '12px',
+                    fontSize: '16px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    width: '100%'
+                  }}
+                />
+              </View>
             )}
           </View>
 
