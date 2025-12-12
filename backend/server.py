@@ -2156,6 +2156,19 @@ async def create_coupon(coupon_data: CouponCreate, user: Dict = Depends(get_curr
     if user.get('user_type') not in ['business', 'entrepreneur']:
         raise HTTPException(status_code=403, detail="Only venues and entrepreneurs can create coupons")
     
+    # Check for duplicate coupon (same title by same owner)
+    existing_coupon = await db.coupons.find_one({
+        'owner_id': user['_id'],
+        'title': coupon_data.title.strip(),
+        'status': {'$ne': 'deleted'}  # Exclude deleted coupons
+    })
+    
+    if existing_coupon:
+        raise HTTPException(
+            status_code=400,
+            detail="You already have a coupon with this title. Please use a different title or edit the existing one."
+        )
+    
     import uuid
     coupon_id = str(uuid.uuid4())
     coupon_dict = coupon_data.dict()
