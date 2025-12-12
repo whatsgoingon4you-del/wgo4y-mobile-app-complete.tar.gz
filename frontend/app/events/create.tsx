@@ -222,20 +222,15 @@ export default function CreateEventScreen() {
         }
       );
 
-      Alert.alert('Success', 'Event created successfully!', [
-        { 
-          text: 'OK', 
-          onPress: () => {
-            router.back();
-            setTimeout(() => {
-              router.back();
-              setTimeout(() => {
-                router.push('/my-events');
-              }, 100);
-            }, 100);
-          }
-        }
-      ]);
+      // Show success message
+      if (Platform.OS === 'web') {
+        alert('Success! Event created successfully.');
+      } else {
+        Alert.alert('Success', 'Event created successfully!');
+      }
+      
+      // Navigate to my-events page after successful creation
+      router.push('/my-events');
     } catch (error: any) {
       console.error('Error creating event:', error);
       Alert.alert('Error', error.response?.data?.detail || 'Failed to create event');

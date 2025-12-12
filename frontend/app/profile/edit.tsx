@@ -299,16 +299,15 @@ export default function EditProfile() {
 
       console.log('✅ Profile saved successfully');
       
+      // Show success message
       if (Platform.OS === 'web') {
         alert('Success! Your profile has been updated.');
-        router.back(); // Go back to profile
       } else {
-        Alert.alert(
-          'Success', 
-          'Profile updated successfully!',
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
+        Alert.alert('Success', 'Profile updated successfully!');
       }
+      
+      // Navigate back after successful save
+      router.back();
     } catch (error: any) {
       console.error('Error updating profile:', error);
       if (Platform.OS === 'web') {

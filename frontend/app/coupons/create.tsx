@@ -106,12 +106,15 @@ export default function CreateCouponScreen() {
         }
       );
 
-      Alert.alert('Success', 'Coupon created successfully!', [
-        { 
-          text: 'OK', 
-          onPress: () => router.back()
-        }
-      ]);
+      // Show success message
+      if (Platform.OS === 'web') {
+        alert('Success! Coupon created successfully.');
+      } else {
+        Alert.alert('Success', 'Coupon created successfully!');
+      }
+      
+      // Navigate back after successful creation
+      router.back();
     } catch (error: any) {
       console.error('Error creating coupon:', error);
       Alert.alert('Error', error.response?.data?.detail || 'Failed to create coupon');
