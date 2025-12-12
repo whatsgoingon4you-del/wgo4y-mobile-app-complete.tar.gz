@@ -260,7 +260,7 @@ backend:
           
           **TEST DATE:** 2025-01-18
           **TEST FILE:** /app/backend_test.py
-          **BACKEND URL:** https://venue-job-portal.preview.emergentagent.com/api
+          **BACKEND URL:** https://wgo4y-repair.preview.emergentagent.com/api
           
           **FULL E2E TEST FLOW:**
           
@@ -862,7 +862,7 @@ agent_communication:
       
       **TEST DATE:** 2025-01-18
       **TEST FILE:** /app/backend_test.py
-      **BACKEND URL:** https://venue-job-portal.preview.emergentagent.com/api
+      **BACKEND URL:** https://wgo4y-repair.preview.emergentagent.com/api
       
       **SUMMARY:**
       Comprehensive E2E testing of the un-archive logic for worker contact requests.
@@ -951,7 +951,7 @@ agent_communication:
       
       **TEST DATE:** 2025-11-18 09:09:53
       **TEST FILE:** /app/backend_test.py
-      **BACKEND URL:** https://venue-job-portal.preview.emergentagent.com/api
+      **BACKEND URL:** https://wgo4y-repair.preview.emergentagent.com/api
       
       **SUMMARY:**
       Archive filtering works perfectly, but conversations don't reappear after new messages are sent.
