@@ -2997,32 +2997,31 @@ async def get_workers(
         # Check if user has premium tier
         require_premium_tier(user, "Worker Network")
     
-    # Default: show only approved workers to non-admins
-    query = {}
+    # Strategy: Show both worker_profiles AND entrepreneur users
+    enriched = []
     
+    # 1. Get approved workers from worker_profiles collection
+    worker_query = {}
     if user.get('is_admin', False):
-        # Admins can filter by status
         if status:
-            query['status'] = status
+            worker_query['status'] = status
     else:
-        # Non-admins only see approved workers
-        query['status'] = 'approved'
+        worker_query['status'] = 'approved'
     
     if role:
-        query['role'] = role
-    
+        worker_query['role'] = role
     if city:
-        query['city'] = {'$regex': city, '$options': 'i'}
-    
+        worker_query['city'] = {'$regex': city, '$options': 'i'}
     if state:
-        query['state'] = state
+        worker_query['state'] = state
     
-    workers = await db.worker_profiles.find(query).sort('created_at', -1).to_list(1000)
+    workers = await db.worker_profiles.find(worker_query).sort('created_at', -1).to_list(1000)
+    worker_user_ids = set()
     
-    # Enrich with user info
-    enriched = []
+    # Enrich worker_profiles with user info
     for worker in workers:
         user_info = await db.users.find_one({'_id': worker['user_id']})
+        worker_user_ids.add(worker['user_id'])
         enriched.append({
             **worker,
             'id': worker['_id'],
@@ -3032,6 +3031,44 @@ async def get_workers(
             'profile_photo': user_info.get('profile_photo') if user_info else None
         })
     
+    # 2. Also get entrepreneur users who DON'T have worker_profiles yet
+    # These are migrated entrepreneurs who should be visible
+    entrepreneur_query = {
+        'user_type': 'entrepreneur',
+        'onboarding_completed': True,
+        '_id': {'$nin': list(worker_user_ids)}  # Exclude those already in worker_profiles
+    }
+    
+    if city:
+        entrepreneur_query['location'] = {'$regex': city, '$options': 'i'}
+    # Note: State filtering may not work perfectly for entrepreneurs without worker_profiles
+    # as their location might not have state separately
+    
+    entrepreneurs = await db.users.find(entrepreneur_query, {'_id': 0}).sort('created_at', -1).to_list(1000)
+    
+    for entr in entrepreneurs:
+        # Create a worker-like structure from entrepreneur user data
+        enriched.append({
+            'id': entr.get('id'),
+            'user_id': entr.get('id'),
+            'user_name': entr.get('full_name') or entr.get('service_name') or entr.get('username'),
+            'user_email': entr.get('email'),
+            'user_phone': entr.get('phone'),
+            'profile_photo': entr.get('profile_photo'),
+            'bio': entr.get('bio'),
+            'location': entr.get('location'),
+            'city': entr.get('location'),  # Approximate
+            'state': None,  # May not be available
+            'role': ', '.join(entr.get('occupations', [])) if entr.get('occupations') else 'Entrepreneur',
+            'status': 'approved',  # Treat completed entrepreneurs as approved
+            'years_experience': entr.get('years_experience'),
+            'portfolio_photos': entr.get('portfolio_photos', []),
+            'services_offered': entr.get('services_offered', []),
+            'rate_structure': entr.get('rate_structure'),
+            'created_at': entr.get('created_at')
+        })
+    
+    print(f"✅ Returned {len(enriched)} workers ({len(workers)} from worker_profiles, {len(entrepreneurs)} entrepreneurs)")
     return enriched
 
 
