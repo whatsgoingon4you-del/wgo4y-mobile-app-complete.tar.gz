@@ -4388,11 +4388,14 @@ async def validate_promo_code(promo_data: PromoCodeValidate):
         )
     
     # Check expiration
-    if promo_code.get('expires_at') and datetime.fromisoformat(promo_code['expires_at']) < datetime.utcnow():
-        return PromoCodeResponse(
-            valid=False,
-            message="This promo code has expired"
-        )
+    if promo_code.get('expires_at'):
+        expires_at = datetime.fromisoformat(promo_code['expires_at'])
+        now = datetime.now(timezone.utc)
+        if expires_at < now:
+            return PromoCodeResponse(
+                valid=False,
+                message="This promo code has expired"
+            )
     
     # Check if code applies to this user type
     if promo_code.get('user_types') and promo_data.user_type not in promo_code['user_types']:
