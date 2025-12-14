@@ -44,13 +44,8 @@ export default function Login() {
 
     setLoading(true);
     try {
-      // Sanitize username to match registration format:
-      // Remove spaces, special chars (except _/-), replace with underscore
-      let sanitizedUsername = username.trim().replace(/[^\w\-]/g, '_');
-      sanitizedUsername = sanitizedUsername.replace(/_+/g, '_'); // Multiple underscores → single
-      sanitizedUsername = sanitizedUsername.replace(/^_|_$/g, ''); // Remove leading/trailing underscores
-      
-      await login(sanitizedUsername, password);
+      // Send username as-is (backend handles various formats: username, email, full_name)
+      await login(username.trim(), password);
       
       // After login, check profile status and route accordingly
       // Wait a moment for auth context to update
