@@ -76,18 +76,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string) => {
     try {
+      console.log('🔐 AuthContext: Starting login API call for:', username);
       const response = await axios.post(`${API_URL}/api/auth/login`, { username, password });
       const { token: newToken, user: newUser } = response.data;
       
+      console.log('✅ AuthContext: Login API successful, received token and user');
+      console.log('👤 User data:', newUser);
+      
+      // Store in AsyncStorage
       await AsyncStorage.setItem('auth_token', newToken);
       await AsyncStorage.setItem('user', JSON.stringify(newUser));
+      
+      console.log('💾 AuthContext: Stored token and user in AsyncStorage');
+      
+      // Also store in localStorage for web (better compatibility)
+      if (Platform.OS === 'web') {
+        try {
+          localStorage.setItem('auth_token', newToken);
+          localStorage.setItem('user', JSON.stringify(newUser));
+          console.log('💾 AuthContext: Also stored in localStorage for web');
+        } catch (e) {
+          console.warn('localStorage not available:', e);
+        }
+      }
       
       setToken(newToken);
       setUser(newUser);
       
+      console.log('✅ AuthContext: Set token and user in state');
+      
       // Refresh to get profile_completed status
       await refreshUserData(newToken);
+      
+      console.log('✅ AuthContext: Login complete');
     } catch (error: any) {
+      console.error('❌ AuthContext: Login failed:', error);
+      console.error('Error response:', error.response?.data);
       throw new Error(error.response?.data?.detail || 'Login failed');
     }
   };
@@ -100,6 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fullName?: string
   ) => {
     try {
+      console.log('📝 AuthContext: Starting registration for:', username);
       const response = await axios.post(`${API_URL}/api/auth/register`, {
         username,
         password,
@@ -108,6 +133,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         full_name: fullName,
       });
       const { token: newToken, user: newUser } = response.data;
+      
+      console.log('✅ AuthContext: Registration successful');
       
       // Clear ALL onboarding progress for fresh start
       await AsyncStorage.removeItem('business_step1_progress');
@@ -124,9 +151,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await AsyncStorage.setItem('auth_token', newToken);
       await AsyncStorage.setItem('user', JSON.stringify(newUser));
       
+      // Also use localStorage for web
+      if (Platform.OS === 'web') {
+        try {
+          localStorage.setItem('auth_token', newToken);
+          localStorage.setItem('user', JSON.stringify(newUser));
+          console.log('💾 AuthContext: Also stored in localStorage for web');
+        } catch (e) {
+          console.warn('localStorage not available:', e);
+        }
+      }
+      
       setToken(newToken);
       setUser(newUser);
+      
+      console.log('✅ AuthContext: Registration complete');
     } catch (error: any) {
+      console.error('❌ AuthContext: Registration failed:', error);
+      console.error('Error response:', error.response?.data);
       throw new Error(error.response?.data?.detail || 'Registration failed');
     }
   };
