@@ -44,21 +44,42 @@ export default function Login() {
 
     setLoading(true);
     try {
+      console.log('🔐 Starting login for:', username);
+      
       // Send username as-is (backend handles various formats: username, email, full_name)
       await login(username.trim(), password);
       
+      console.log('✅ Login successful, waiting for user data...');
+      
+      // Wait a bit for AsyncStorage to persist (web compatibility)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // After login, check profile status and route accordingly
-      // Wait a moment for auth context to update
       const userData = await AsyncStorage.getItem('user');
-      if (userData) {
+      const tokenData = await AsyncStorage.getItem('auth_token');
+      
+      console.log('📦 Retrieved from storage:', {
+        hasUserData: !!userData,
+        hasToken: !!tokenData,
+        userDataLength: userData?.length
+      });
+      
+      if (userData && tokenData) {
         const user = JSON.parse(userData);
+        
+        console.log('👤 User data:', {
+          username: user.username,
+          type: user.user_type,
+          tier: user.membership_tier,
+          profile_completed: user.profile_completed
+        });
         
         // Check if user has a paid membership tier
         const hasPaidTier = user.membership_tier && 
           user.membership_tier !== 'basic' && 
           user.membership_tier !== 'free';
         
-        console.log('🔐 Login routing:', {
+        console.log('🔐 Login routing decision:', {
           profile_completed: user.profile_completed,
           membership_tier: user.membership_tier,
           hasPaidTier
@@ -66,26 +87,37 @@ export default function Login() {
         
         // PRIORITY: Paid tier users ALWAYS go to dashboard (skip onboarding)
         if (hasPaidTier) {
-          console.log('→ Paid tier detected, going to dashboard');
-          router.replace('/(tabs)/home');
+          console.log('→ Paid tier detected, navigating to dashboard');
+          setTimeout(() => {
+            router.replace('/(tabs)/home');
+          }, 100);
         } else if (user.profile_completed === false) {
           // For basic/free users, check profile completion
-          console.log('→ Profile incomplete, going to onboarding');
-          router.replace('/onboarding/user-type-selection');
+          console.log('→ Profile incomplete, navigating to onboarding');
+          setTimeout(() => {
+            router.replace('/onboarding/user-type-selection');
+          }, 100);
         } else {
-          console.log('→ Profile complete, going to dashboard');
-          router.replace('/(tabs)/home');
+          console.log('→ Profile complete, navigating to dashboard');
+          setTimeout(() => {
+            router.replace('/(tabs)/home');
+          }, 100);
         }
       } else {
         console.error('❌ User data not found in AsyncStorage after login');
-        Alert.alert('Error', 'Failed to load user data. Please try again.');
+        console.error('Storage check:', { userData: !!userData, tokenData: !!tokenData });
+        Alert.alert('Error', 'Failed to load user data. Please try logging in again.');
+        setLoading(false);
       }
       
-      // Clear loading state after successful navigation
-      setLoading(false);
     } catch (error: any) {
-      console.error('Login error:', error);
-      Alert.alert('Login Failed', error.message);
+      console.error('❌ Login error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      Alert.alert('Login Failed', error.message || 'An error occurred during login');
       setLoading(false);
     }
   };
