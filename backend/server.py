@@ -4898,6 +4898,94 @@ async def populate_db_get(secret: str):
                 'venue_photos': [f'{R2}/6-copy.jpg'],
                 'created_at': datetime.now(timezone.utc)
             },
+
+# ============= ADMIN R2 MEDIA & PROFILE MANAGEMENT =============
+
+@api_router.get("/admin/r2-media")
+async def list_r2_media(
+    search: Optional[str] = None,
+    page: int = 1,
+    per_page: int = 50,
+    user: Dict = Depends(get_current_user)
+):
+    """List R2 media with search (admin only)"""
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    R2_BASE = "https://pub-bfa7ee4cef34458990f1d94545974968.r2.dev"
+    
+    # Known R2 media objects
+    known_media = [
+        # Dboy Stackalini
+        {"url": f"{R2_BASE}/img8.jpg", "name": "img8.jpg", "category": "dboy"},
+        {"url": f"{R2_BASE}/dboy-profile.jpg", "name": "dboy-profile.jpg", "category": "dboy"},
+        
+        # D.Petty  
+        {"url": f"{R2_BASE}/IMG_6465.jpg", "name": "IMG_6465.jpg", "category": "petty"},
+        {"url": f"{R2_BASE}/dpetty-profile.jpg", "name": "dpetty-profile.jpg", "category": "petty"},
+        
+        # Lace Nerd
+        {"url": f"{R2_BASE}/The%20Lace%20Nerd%20profile%20image.jpeg", "name": "lace-nerd-profile.jpeg", "category": "lace"},
+        {"url": f"{R2_BASE}/lace-profile.jpg", "name": "lace-profile.jpg", "category": "lace"},
+    ]
+    
+    # Search filter
+    filtered = [m for m in known_media if not search or search.lower() in m['name'].lower()] if search else known_media
+    
+    # Pagination
+    start = (page - 1) * per_page
+    paginated = filtered[start:start + per_page]
+    
+    return {
+        'media': paginated,
+        'total': len(filtered),
+        'page': page,
+        'total_pages': (len(filtered) + per_page - 1) // per_page
+    }
+
+@api_router.put("/admin/entrepreneurs/{user_id}")
+async def admin_update_entrepreneur(
+    user_id: str,
+    profile_data: dict,
+    user: Dict = Depends(get_current_user)
+):
+    """Admin update entrepreneur profile"""
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    entrepreneur = await db.users.find_one({'id': user_id}) or await db.users.find_one({'_id': user_id})
+    if not entrepreneur:
+        raise HTTPException(status_code=404, detail="Entrepreneur not found")
+    
+    update_fields = {'updated_at': datetime.now(timezone.utc)}
+    
+    if 'full_name' in profile_data:
+        update_fields['full_name'] = profile_data['full_name']
+    if 'city' in profile_data and 'state' in profile_data:
+        update_fields['city'] = profile_data['city']
+        update_fields['state'] = profile_data['state']
+        update_fields['location'] = f"{profile_data['city']}, {profile_data['state']}"
+    if 'bio' in profile_data:
+        update_fields['bio'] = profile_data['bio']
+    if 'occupations' in profile_data:
+        update_fields['occupations'] = profile_data['occupations']
+    if 'profile_photo_url' in profile_data:
+        update_fields['profile_photo'] = profile_data['profile_photo_url']
+    if 'gallery_urls' in profile_data:
+        update_fields['portfolio_photos'] = profile_data['gallery_urls']
+    if 'flyer_urls' in profile_data:
+        update_fields['flyer_urls'] = profile_data['flyer_urls']
+    
+    await db.users.update_one({'_id': entrepreneur['_id']}, {'$set': update_fields})
+    
+    updated = await db.users.find_one({'_id': entrepreneur['_id']})
+    return {'message': 'Profile updated', 'profile': {
+        'id': updated.get('id'),
+        'full_name': updated.get('full_name'),
+        'city': updated.get('city'),
+        'state': updated.get('state')
+    }}
+
             {
                 '_id': str(uuid.uuid4()),
                 'username': 'one_mansion',
