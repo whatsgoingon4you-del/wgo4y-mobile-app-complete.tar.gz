@@ -56,6 +56,8 @@ export default function CreateCouponScreen() {
   const [usageLimitPerUser, setUsageLimitPerUser] = useState('1');
   const [usageLimitTotal, setUsageLimitTotal] = useState('');
   const [hasUnlimitedTotal, setHasUnlimitedTotal] = useState(true);
+  const [ageRestriction, setAgeRestriction] = useState('');
+  const [exclusions, setExclusions] = useState('');
 
   const toggleDay = (day: string) => {
     if (selectedDays.includes(day)) {
@@ -99,6 +101,8 @@ export default function CreateCouponScreen() {
           days_of_week: selectedDays.length > 0 ? selectedDays : null,
           usage_limit_per_user: parseInt(usageLimitPerUser) || 1,
           usage_limit_total: hasUnlimitedTotal ? null : (parseInt(usageLimitTotal) || null),
+          age_restriction: ageRestriction.trim() || null,
+          exclusions: exclusions.trim() || null,
           status: 'active'
         },
         {
