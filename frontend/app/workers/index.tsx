@@ -660,6 +660,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  showcaseBadge: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 8,
+    gap: 3,
+  },
+  showcaseBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFD700',
+  },
   infoContainer: {
     flex: 1,
   },
