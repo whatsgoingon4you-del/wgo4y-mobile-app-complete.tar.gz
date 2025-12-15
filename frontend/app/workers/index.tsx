@@ -77,6 +77,7 @@ export default function WorkersDiscoveryScreen() {
     if (!loading && workers.length >= 0) {
       const reloadFiltered = async () => {
         try {
+          console.log(`🔍 Applying filters: role=${selectedRole}, state=${selectedState}`);
           const token = await AsyncStorage.getItem('auth_token');
           
           // Build query params - only include non-default filters
@@ -84,6 +85,7 @@ export default function WorkersDiscoveryScreen() {
           if (selectedRole !== 'All Roles') params.role = selectedRole;
           if (selectedState !== 'All States') params.state = selectedState;
           
+          console.log('📤 Fetching workers with params:', params);
           const response = await axios.get(`${API_URL}/api/workers`, {
             headers: { Authorization: `Bearer ${token}` },
             params
@@ -221,7 +223,10 @@ export default function WorkersDiscoveryScreen() {
       <View style={styles.workerCard}>
         <TouchableOpacity
           style={styles.cardContent}
-          onPress={() => router.push(`/workers/${item.id}`)}
+          onPress={() => {
+            console.log(`🔍 Opening worker profile: ${item.id} - ${item.user_name}`);
+            router.push(`/workers/${item.id}`);
+          }}
         >
           {/* Profile Photo */}
           <View style={styles.photoContainer}>
