@@ -32,6 +32,7 @@ export default function CreateRaffleScreen() {
   const [prize, setPrize] = useState('');
   const [ticketPrice, setTicketPrice] = useState('');
   const [maxTickets, setMaxTickets] = useState('');
+  const [terms, setTerms] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
@@ -126,6 +127,7 @@ export default function CreateRaffleScreen() {
           start_date: startDate.toISOString(),
           end_date: endDate.toISOString(),
           max_tickets: maxTickets ? parseInt(maxTickets) : null,
+          terms: terms.trim() || null,
           image: image,
         },
         {
@@ -217,6 +219,19 @@ export default function CreateRaffleScreen() {
                 placeholder="e.g., $500 Gift Card, Free Bottle Service"
                 value={prize}
                 onChangeText={setPrize}
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Terms & Exclusions (Optional)</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="e.g., Must be 21+, Prize redeemable within 60 days, No cash value"
+                value={terms}
+                onChangeText={setTerms}
+                multiline
+                numberOfLines={3}
                 placeholderTextColor="#999"
               />
             </View>

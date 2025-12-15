@@ -501,6 +501,7 @@ class RaffleCreate(BaseModel):
     end_date: datetime
     max_tickets: Optional[int] = None
     image: str
+    terms: Optional[str] = None  # Terms & exclusions (e.g., "Must be 21+, No cash value")
 
 class RaffleEntry(BaseModel):
     id: str
