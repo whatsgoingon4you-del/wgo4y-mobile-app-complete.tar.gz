@@ -22,7 +22,7 @@ async def seed_venues_and_services():
     business_users = await db.users.find({
         'user_type': 'business',
         'onboarding_completed': True
-    }, {'_id': 0}).limit(10).to_list(100)
+    }).limit(10).to_list(100)
     
     print(f"Found {len(business_users)} business users")
     
@@ -31,14 +31,16 @@ async def seed_venues_and_services():
     for biz in business_users[:5]:  # Create 5 demo venues
         venue_id = str(uuid4())
         
+        owner_id = biz.get('id') or biz.get('_id')
+        
         # Check if venue already exists for this user
-        existing = await db.venues.find_one({'owner_id': biz['id']})
+        existing = await db.venues.find_one({'owner_id': owner_id})
         if existing:
             continue
         
         venue = {
             '_id': venue_id,
-            'owner_id': biz['id'],
+            'owner_id': owner_id,
             'name': biz.get('business_name', f"Demo Venue {venues_created + 1}"),
             'description': biz.get('business_description', 'Amazing venue for events and entertainment'),
             'venue_type': biz.get('venue_type', 'clubs_lounges'),
@@ -66,7 +68,7 @@ async def seed_venues_and_services():
     entrepreneur_users = await db.users.find({
         'user_type': 'entrepreneur',
         'onboarding_completed': True
-    }, {'_id': 0}).limit(15).to_list(100)
+    }).limit(15).to_list(100)
     
     print(f"Found {len(entrepreneur_users)} entrepreneur users")
     
@@ -75,8 +77,10 @@ async def seed_venues_and_services():
     for entr in entrepreneur_users[:10]:  # Create 10 demo services
         service_id = str(uuid4())
         
+        provider_id = entr.get('id') or entr.get('_id')
+        
         # Check if service already exists
-        existing = await db.services.find_one({'provider_id': entr['id']})
+        existing = await db.services.find_one({'provider_id': provider_id})
         if existing:
             continue
         
@@ -85,7 +89,7 @@ async def seed_venues_and_services():
         
         service = {
             '_id': service_id,
-            'provider_id': entr['id'],
+            'provider_id': provider_id,
             'title': f"{occupation} Services",
             'description': f"Professional {occupation.lower()} services for your events",
             'service_type': occupation,
