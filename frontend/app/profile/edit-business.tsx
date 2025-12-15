@@ -702,14 +702,20 @@ export default function EditBusinessProfile() {
   };
 
   const removePortfolioVideo = (index: number) => {
-    Alert.alert(
-      'Remove Video',
-      'Are you sure you want to remove this video?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => setPortfolioVideos(portfolioVideos.filter((_, i) => i !== index)) }
-      ]
-    );
+    if (Platform.OS === 'web') {
+      if (confirm('Are you sure you want to remove this video?')) {
+        setPortfolioVideos(portfolioVideos.filter((_, i) => i !== index));
+      }
+    } else {
+      Alert.alert(
+        'Remove Video',
+        'Are you sure you want to remove this video?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Remove', style: 'destructive', onPress: () => setPortfolioVideos(portfolioVideos.filter((_, i) => i !== index)) }
+        ]
+      );
+    }
   };
 
   // Helper function to calculate days until weekly reset
