@@ -18,7 +18,7 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
-import { ALL_SERVICES } from '../onboarding/entrepreneur/servicesData';
+import { COMMON_JOB_ROLES, GROUPED_JOB_ROLES } from './groupedJobRoles';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
 
@@ -84,6 +84,7 @@ export default function PostJobScreen() {
   const [role, setRole] = useState('');
   const [roleSearch, setRoleSearch] = useState('');
   const [showRolePicker, setShowRolePicker] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [eventDate, setEventDate] = useState<Date | null>(null);
   const [showEventDatePicker, setShowEventDatePicker] = useState(false);
   const [city, setCity] = useState('');
@@ -191,16 +192,17 @@ export default function PostJobScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Role/Position *</Text>
               <TouchableOpacity
-                style={styles.input}
+                style={styles.roleSelector}
                 onPress={() => setShowRolePicker(!showRolePicker)}
               >
-                <Text style={{ color: role ? '#000' : '#999' }}>
-                  {role || 'Select a role (e.g., DJ, Photographer, Bartender)'}
+                <Text style={{ color: role ? '#000' : '#999', flex: 1 }}>
+                  {role || 'Select a role'}
                 </Text>
+                <Ionicons name={showRolePicker ? 'chevron-up' : 'chevron-down'} size={20} color="#666" />
               </TouchableOpacity>
               
               {showRolePicker && (
-                <View style={styles.rolePickerContainer}>
+                <View style={styles.rolePickerModal}>
                   <TextInput
                     style={styles.searchInput}
                     placeholder="Search roles..."
@@ -208,23 +210,99 @@ export default function PostJobScreen() {
                     onChangeText={setRoleSearch}
                     placeholderTextColor="#999"
                   />
+                  
                   <ScrollView style={styles.roleList} nestedScrollEnabled>
-                    {ALL_SERVICES
-                      .filter(r => r.toLowerCase().includes(roleSearch.toLowerCase()))
-                      .slice(0, 50)
-                      .map((r) => (
-                        <TouchableOpacity
-                          key={r}
-                          style={styles.roleItem}
-                          onPress={() => {
-                            setRole(r);
-                            setShowRolePicker(false);
-                            setRoleSearch('');
-                          }}
-                        >
-                          <Text style={styles.roleItemText}>{r}</Text>
-                        </TouchableOpacity>
-                      ))}
+                    {/* Common Roles - Always Visible */}
+                    {roleSearch === '' && (
+                      <View style={styles.commonRolesSection}>
+                        <Text style={styles.categoryTitle}>⭐ Common Roles</Text>
+                        {COMMON_JOB_ROLES.map((r) => (
+                          <TouchableOpacity
+                            key={r}
+                            style={styles.roleItem}
+                            onPress={() => {
+                              setRole(r);
+                              setShowRolePicker(false);
+                              setRoleSearch('');
+                            }}
+                          >
+                            <Text style={styles.roleItemText}>{r}</Text>
+                            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                    
+                    {/* Search Results or Grouped Categories */}
+                    {roleSearch !== '' ? (
+                      // Show filtered search results
+                      <View>
+                        <Text style={styles.categoryTitle}>🔍 Search Results</Text>
+                        {[...COMMON_JOB_ROLES, ...GROUPED_JOB_ROLES.flatMap(cat => cat.roles)]
+                          .filter(r => r.toLowerCase().includes(roleSearch.toLowerCase()))
+                          .slice(0, 50)
+                          .map((r) => (
+                            <TouchableOpacity
+                              key={r}
+                              style={styles.roleItem}
+                              onPress={() => {
+                                setRole(r);
+                                setShowRolePicker(false);
+                                setRoleSearch('');
+                              }}
+                            >
+                              <Text style={styles.roleItemText}>{r}</Text>
+                            </TouchableOpacity>
+                          ))}
+                      </View>
+                    ) : (
+                      // Show grouped categories
+                      GROUPED_JOB_ROLES.map((category) => {
+                        const isExpanded = expandedCategories.has(category.name);
+                        return (
+                          <View key={category.name} style={styles.categoryGroup}>
+                            <TouchableOpacity
+                              style={styles.categoryHeader}
+                              onPress={() => {
+                                const newExpanded = new Set(expandedCategories);
+                                if (isExpanded) {
+                                  newExpanded.delete(category.name);
+                                } else {
+                                  newExpanded.add(category.name);
+                                }
+                                setExpandedCategories(newExpanded);
+                              }}
+                            >
+                              <Text style={styles.categoryTitle}>{category.name}</Text>
+                              <Ionicons 
+                                name={isExpanded ? 'chevron-up' : 'chevron-down'} 
+                                size={20} 
+                                color="#666" 
+                              />
+                            </TouchableOpacity>
+                            
+                            {isExpanded && (
+                              <View style={styles.categoryRoles}>
+                                {category.roles.map((r) => (
+                                  <TouchableOpacity
+                                    key={r}
+                                    style={styles.roleItem}
+                                    onPress={() => {
+                                      setRole(r);
+                                      setShowRolePicker(false);
+                                      setRoleSearch('');
+                                      setExpandedCategories(new Set());
+                                    }}
+                                  >
+                                    <Text style={styles.roleItemText}>{r}</Text>
+                                  </TouchableOpacity>
+                                ))}
+                              </View>
+                            )}
+                          </View>
+                        );
+                      })
+                    )}
                   </ScrollView>
                 </View>
               )}
@@ -437,5 +515,72 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
+  },
+  roleSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#fff',
+  },
+  rolePickerModal: {
+    marginTop: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    maxHeight: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  searchInput: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    padding: 12,
+    fontSize: 16,
+  },
+  roleList: {
+    maxHeight: 350,
+  },
+  commonRolesSection: {
+    paddingVertical: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: '#f0f0f0',
+  },
+  categoryGroup: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#f8f8f8',
+  },
+  categoryTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  categoryRoles: {
+    backgroundColor: '#fff',
+  },
+  roleItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f5',
+  },
+  roleItemText: {
+    fontSize: 15,
+    color: '#333',
   },
 });
