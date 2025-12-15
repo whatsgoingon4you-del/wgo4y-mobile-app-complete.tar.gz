@@ -190,24 +190,72 @@ export default function PostJobScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Role/Position *</Text>
-              <TextInput
+              <TouchableOpacity
                 style={styles.input}
-                placeholder="e.g., DJ, Photographer, Bartender"
-                value={role}
-                onChangeText={setRole}
-                placeholderTextColor="#999"
-              />
+                onPress={() => setShowRolePicker(!showRolePicker)}
+              >
+                <Text style={{ color: role ? '#000' : '#999' }}>
+                  {role || 'Select a role (e.g., DJ, Photographer, Bartender)'}
+                </Text>
+              </TouchableOpacity>
+              
+              {showRolePicker && (
+                <View style={styles.rolePickerContainer}>
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search roles..."
+                    value={roleSearch}
+                    onChangeText={setRoleSearch}
+                    placeholderTextColor="#999"
+                  />
+                  <ScrollView style={styles.roleList} nestedScrollEnabled>
+                    {ALL_SERVICES
+                      .filter(r => r.toLowerCase().includes(roleSearch.toLowerCase()))
+                      .slice(0, 50)
+                      .map((r) => (
+                        <TouchableOpacity
+                          key={r}
+                          style={styles.roleItem}
+                          onPress={() => {
+                            setRole(r);
+                            setShowRolePicker(false);
+                            setRoleSearch('');
+                          }}
+                        >
+                          <Text style={styles.roleItemText}>{r}</Text>
+                        </TouchableOpacity>
+                      ))}
+                  </ScrollView>
+                </View>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Event Date (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., Jan 15, 2025 or Jan 15-17"
-                value={eventDate}
-                onChangeText={setEventDate}
-                placeholderTextColor="#999"
-              />
+              {Platform.OS === 'web' ? (
+                <input
+                  type="date"
+                  value={eventDate ? eventDate.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setEventDate(e.target.value ? new Date(e.target.value) : null)}
+                  style={{
+                    padding: '12px',
+                    fontSize: '16px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    width: '100%',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer'
+                  }}
+                />
+              ) : (
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., Jan 15, 2025 or Jan 15-17"
+                  value={eventDate ? eventDate.toLocaleDateString() : ''}
+                  onFocus={() => setShowEventDatePicker(true)}
+                  placeholderTextColor="#999"
+                />
+              )}
             </View>
           </View>
 
