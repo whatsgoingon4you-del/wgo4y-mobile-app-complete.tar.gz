@@ -375,6 +375,8 @@ class CouponCreate(BaseModel):
     usage_limit_per_user: int = 1
     status: str = 'active'
     image: Optional[str] = None
+    age_restriction: Optional[str] = None  # e.g., "21+", "18+", None
+    exclusions: Optional[str] = None  # e.g., "Not valid with other offers"
 
 class CouponUpdate(BaseModel):
     title: Optional[str] = None
@@ -388,6 +390,8 @@ class CouponUpdate(BaseModel):
     usage_limit_per_user: Optional[int] = None
     status: Optional[str] = None
     image: Optional[str] = None
+    age_restriction: Optional[str] = None
+    exclusions: Optional[str] = None
 
 class CouponRedemption(BaseModel):
     id: str
