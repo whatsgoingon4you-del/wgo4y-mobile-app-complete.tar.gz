@@ -3054,26 +3054,35 @@ async def get_workers(
             'profile_photo': user_info.get('profile_photo') if user_info else None
         })
     
-    # 2. Also get entrepreneur users who DON'T have worker_profiles yet
-    # These are migrated entrepreneurs who should be visible
+    # 2. Get entrepreneur users (including showcase)
     entrepreneur_query = {
         'user_type': 'entrepreneur',
         'onboarding_completed': True,
-        '_id': {'$nin': list(worker_user_ids)}  # Exclude those already in worker_profiles
+        '_id': {'$nin': list(worker_user_ids)}
     }
     
+    # Role filtering for entrepreneurs (they have 'occupations' array, not 'role' field)
+    if role:
+        entrepreneur_query['occupations'] = role  # Match role in occupations array
+    
+    # City filtering
     if city:
-        entrepreneur_query['location'] = {'$regex': city, '$options': 'i'}
-    # Note: State filtering may not work perfectly for entrepreneurs without worker_profiles
-    # as their location might not have state separately
+        entrepreneur_query['$or'] = [
+            {'city': {'$regex': city, '$options': 'i'}},
+            {'location': {'$regex': city, '$options': 'i'}}
+        ]
+    
+    # State filtering
+    if state:
+        entrepreneur_query['state'] = state
     
     entrepreneurs = await db.users.find(entrepreneur_query).sort('created_at', -1).to_list(1000)
     
     for entr in entrepreneurs:
         user_id = entr.get('id') or entr.get('_id')
-        if user_id in seen_user_ids:
+        if user_id in worker_user_ids:
             continue  # Skip duplicates
-        seen_user_ids.add(user_id)
+        worker_user_ids.add(user_id)
         
         # Create a worker-like structure from entrepreneur user data
         enriched.append({
@@ -3171,20 +3180,59 @@ async def update_contact_request_status(
 @api_router.get("/workers/{worker_id}")
 async def get_worker(worker_id: str, user: Dict = Depends(get_current_user)):
     """Get worker profile details"""
+    print(f"🔍 Looking for worker: {worker_id}")
+    
+    # Try worker_profiles collection first
     worker = await db.worker_profiles.find_one({'_id': worker_id})
-    if not worker:
+    if worker:
+        print(f"✅ Found in worker_profiles")
+        user_info = await db.users.find_one({'_id': worker['user_id']})
+        return {
+            **worker,
+            'id': worker['_id'],
+            'user_name': user_info.get('full_name') if user_info else 'Unknown',
+            'profile_photo': user_info.get('profile_photo') if user_info else None,
+            'is_showcase': user_info.get('is_showcase', False) if user_info else False
+        }
+    
+    # Try users collection by 'id' field (UUID)
+    print(f"🔍 Searching users by id field: {worker_id}")
+    user_profile = await db.users.find_one({'id': worker_id})
+    if not user_profile:
+        print(f"🔍 Searching users by _id field: {worker_id}")
+        user_profile = await db.users.find_one({'_id': worker_id})
+    
+    if not user_profile:
+        print(f"❌ Worker not found in any collection")
         raise HTTPException(status_code=404, detail="Worker not found")
     
-    # Get user info
-    user_info = await db.users.find_one({'_id': worker['user_id']})
+    if user_profile.get('user_type') != 'entrepreneur':
+        print(f"❌ User is not an entrepreneur: {user_profile.get('user_type')}")
+        raise HTTPException(status_code=404, detail="Worker not found")
     
+    print(f"✅ Found entrepreneur: {user_profile.get('full_name')}")
+    
+    # Return entrepreneur as worker
     return {
-        **worker,
-        'id': worker['_id'],
-        'user_name': user_info.get('full_name') or user_info.get('username') if user_info else 'Unknown',
-        'user_email': user_info.get('email') if user_info else None,
-        'user_phone': user_info.get('phone') if user_info else None,
-        'profile_photo': user_info.get('profile_photo') if user_info else None
+        'id': user_profile.get('id') or user_profile.get('_id'),
+        'user_id': user_profile.get('id') or user_profile.get('_id'),
+        'user_name': user_profile.get('full_name') or user_profile.get('username'),
+        'service_name': user_profile.get('service_name'),
+        'user_email': user_profile.get('email'),
+        'user_phone': user_profile.get('phone'),
+        'profile_photo': user_profile.get('profile_photo'),
+        'portfolio_photos': user_profile.get('portfolio_photos', []),
+        'bio': user_profile.get('bio'),
+        'location': user_profile.get('location'),
+        'city': user_profile.get('city'),
+        'state': user_profile.get('state'),
+        'role': ', '.join(user_profile.get('occupations', [])) if user_profile.get('occupations') else 'Entrepreneur',
+        'years_experience': user_profile.get('years_experience'),
+        'services_offered': user_profile.get('services_offered', []),
+        'rate_structure': user_profile.get('rate_structure'),
+        'status': 'approved',
+        'is_showcase': user_profile.get('is_showcase', False),
+        'showcase_label': user_profile.get('showcase_label')
     }
 
 @api_router.patch("/workers/{worker_id}/status")
