@@ -155,20 +155,8 @@ export default function Dashboard() {
         { id: 'jobs', title: 'Job Board', icon: 'briefcase', route: '/jobs' },
         { id: 'workers', title: 'Find Workers', icon: 'people', route: '/workers' },
         { id: 'vip', title: 'VIP Offerings', icon: 'star', route: '/vip' },
-        { id: 'profile', title: 'My Profile', icon: 'person', route: '/profile' },
+        { id: 'my-profile', title: 'My Profile', icon: 'person', route: '/profile' },
         { id: 'analytics', title: 'Analytics', icon: 'bar-chart', route: '/analytics' },
-        ...commonItems,
-      ];
-    }
-        ...adminItems,
-        ...commonItems,
-        { id: 'events', title: 'My Events', icon: 'calendar', route: '/my-events' },
-        { id: 'consultant', title: 'Consulting', icon: 'people', route: '/consultant' },
-        { id: 'workers', title: 'Find Workers', icon: 'construct', route: '/workers' },
-        { id: 'jobs', title: 'Jobs', icon: 'briefcase', route: '/jobs' },
-        { id: 'menu', title: 'Menu Management', icon: 'restaurant', route: '/menu' },
-        { id: 'analytics', title: 'Analytics', icon: 'stats-chart', route: '/analytics' },
-        { id: 'services', title: 'My Services', icon: 'construct', route: '/my-services' },
       ];
     } else if (user?.user_type === 'entrepreneur') {
       return [
