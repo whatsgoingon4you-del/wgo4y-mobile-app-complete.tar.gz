@@ -214,53 +214,79 @@ export default function WorkersDiscoveryScreen() {
     );
   });
 
-  const renderWorkerCard = ({ item }: { item: any }) => (
-    <View style={styles.workerCard}>
-      <TouchableOpacity
-        style={styles.cardContent}
-        onPress={() => router.push(`/workers/${item.id}`)}
-      >
-        {/* Profile Photo */}
-        <View style={styles.photoContainer}>
-          {item.profile_photo ? (
-            <Image source={{ uri: item.profile_photo }} style={styles.photo} />
-          ) : (
-            <View style={[styles.photo, styles.photoPlaceholder]}>
-              <Ionicons name="person" size={32} color="#999" />
-            </View>
-          )}
-        </View>
-
-        {/* Worker Info */}
-        <View style={styles.infoContainer}>
-          <Text style={styles.workerName}>
-            {item.stage_name || item.user_name}
-          </Text>
-          <Text style={styles.workerRole}>{item.role}</Text>
-          <View style={styles.locationRow}>
-            <Ionicons name="location-outline" size={14} color="#666" />
-            <Text style={styles.locationText}>
-              {item.city}, {item.state}
-            </Text>
+  const renderWorkerCard = ({ item }: { item: any }) => {
+    const isShowcase = item.is_showcase === true;
+    
+    return (
+      <View style={styles.workerCard}>
+        <TouchableOpacity
+          style={styles.cardContent}
+          onPress={() => router.push(`/workers/${item.id}`)}
+        >
+          {/* Profile Photo */}
+          <View style={styles.photoContainer}>
+            {item.profile_photo ? (
+              <Image source={{ uri: item.profile_photo }} style={styles.photo} />
+            ) : (
+              <View style={[styles.photo, styles.photoPlaceholder]}>
+                <Ionicons name="person" size={32} color="#999" />
+              </View>
+            )}
+            
+            {/* Showcase Badge on Photo */}
+            {isShowcase && (
+              <View style={styles.showcaseBadge}>
+                <Ionicons name="star" size={12} color="#FFD700" />
+                <Text style={styles.showcaseBadgeText}>Showcase</Text>
+              </View>
+            )}
           </View>
-          {item.tagline && (
-            <Text style={styles.tagline} numberOfLines={2}>
-              {item.tagline}
-            </Text>
-          )}
-        </View>
-      </TouchableOpacity>
 
-      {/* Request Contact Button */}
-      <TouchableOpacity
-        style={styles.contactButton}
-        onPress={() => handleRequestContact(item.id)}
-      >
-        <Ionicons name="mail-outline" size={18} color="#1565FF" />
-        <Text style={styles.contactButtonText}>Request Contact</Text>
-      </TouchableOpacity>
-    </View>
-  );
+          {/* Worker Info */}
+          <View style={styles.infoContainer}>
+            <View style={styles.nameRow}>
+              <Text style={styles.workerName}>
+                {item.stage_name || item.user_name || item.service_name}
+              </Text>
+            </View>
+            <Text style={styles.workerRole}>{item.role}</Text>
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={14} color="#666" />
+              <Text style={styles.locationText}>
+                {item.city}, {item.state}
+              </Text>
+            </View>
+            {item.tagline && (
+              <Text style={styles.tagline} numberOfLines={2}>
+                {item.tagline}
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
+
+        {/* Contact Button or Showcase CTA */}
+        {isShowcase ? (
+          <View style={styles.showcaseCTA}>
+            <Text style={styles.showcaseCTAText}>Example Profile</Text>
+            <TouchableOpacity
+              style={styles.createProfileButton}
+              onPress={() => router.push('/register')}
+            >
+              <Text style={styles.createProfileButtonText}>Create My Profile</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.contactButton}
+            onPress={() => handleRequestContact(item.id)}
+          >
+            <Ionicons name="mail-outline" size={18} color="#1565FF" />
+            <Text style={styles.contactButtonText}>Request Contact</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
