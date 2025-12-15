@@ -4902,6 +4902,14 @@ async def populate_db_get(secret: str):
         
         for demo_venue in demo_venues:
             await db.venues.insert_one(demo_venue)
+        
+        return {
+            "status": "success",
+            "message": "Demo data populated"
+        }
+    except Exception as e:
+        print(f"Error in populate-db: {e}")
+        return {"status": "error", "message": str(e)}
 
 # ============= ADMIN R2 MEDIA & PROFILE MANAGEMENT =============
 
