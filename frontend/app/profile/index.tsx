@@ -13,7 +13,7 @@ import { formatServicePrice } from '../../utils/priceFormatter';
 import { WebView } from 'react-native-webview';
 import { parseVideoUrl } from '../../utils/videoUtils';
 
-const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
 
 interface ProfileData {
   id: string;

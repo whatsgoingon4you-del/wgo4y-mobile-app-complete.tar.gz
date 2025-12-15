@@ -25,7 +25,7 @@ import { GROUPED_ENTERTAINMENT_CATEGORIES } from '../onboarding/business/grouped
 import { GROUPED_SERVICE_CATEGORIES } from '../onboarding/general/groupedServiceCategories';
 import { getVenuesFromEntertainment, getServicesFromEntertainment } from '../../utils/preferenceMapping';
 
-const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
 
 export default function EditProfile() {
   const router = useRouter();
