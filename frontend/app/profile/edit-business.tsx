@@ -206,10 +206,12 @@ export default function EditBusinessProfile() {
   };
 
   const updateDayTime = (day: string, field: string, value: string) => {
+    console.log(`⏰ Updating ${day} ${field} to ${value}`);
     setHours({
       ...hours,
       [day]: { ...hours[day], [field]: value }
     });
+    console.log(`✅ Hours updated for ${day}`);
   };
 
   // Entertainment Group Helpers
@@ -1478,10 +1480,12 @@ export default function EditBusinessProfile() {
                         <Text>Open this day</Text>
                         <TouchableOpacity
                           onPress={() => {
+                            console.log(`🔄 Toggling ${day} - current: ${hours[day]?.isOpen}`);
                             setHours({
                               ...hours,
                               [day]: { ...hours[day], isOpen: !hours[day].isOpen }
                             });
+                            console.log(`✅ Toggled ${day} to ${!hours[day]?.isOpen}`);
                           }}
                           style={[styles.switch, hours[day]?.isOpen && styles.switchActive]}
                         >
