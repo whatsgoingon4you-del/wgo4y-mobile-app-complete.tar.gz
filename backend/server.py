@@ -4998,7 +4998,8 @@ async def admin_update_entrepreneur(
         'state': updated.get('state')
     }}
 
-            {
+# Mount the router
+app.include_router(api_router)
                 '_id': str(uuid.uuid4()),
                 'username': 'one_mansion',
                 'email': 'info@onemansion.com',
