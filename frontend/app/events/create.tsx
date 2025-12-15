@@ -431,57 +431,9 @@ export default function CreateEventScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Date & Time</Text>
             
-            <View style={styles.dateTimeRow}>
-              <TouchableOpacity 
-                style={styles.dateTimeButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Ionicons name="calendar-outline" size={20} color="#1565FF" />
-                <Text style={styles.dateTimeText}>
-                  {date.toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.dateTimeButton}
-                onPress={() => setShowTimePicker(true)}
-              >
-                <Ionicons name="time-outline" size={20} color="#1565FF" />
-                <Text style={styles.dateTimeText}>
-                  {date.toLocaleTimeString('en-US', { 
-                    hour: 'numeric',
-                    minute: '2-digit'
-                  })}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {showDatePicker && Platform.OS !== 'web' && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display="default"
-                onChange={onDateChange}
-                minimumDate={new Date()}
-              />
-            )}
-
-            {showTimePicker && Platform.OS !== 'web' && (
-              <DateTimePicker
-                value={date}
-                mode="time"
-                display="default"
-                onChange={onTimeChange}
-              />
-            )}
-            
-            {/* Web inline date picker - always visible */}
-            {Platform.OS === 'web' && (
-              <View style={styles.inputGroup}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Event Date *</Text>
+              {Platform.OS === 'web' ? (
                 <input
                   type="date"
                   value={date.toISOString().split('T')[0]}
@@ -499,16 +451,29 @@ export default function CreateEventScreen() {
                     border: '1px solid #e0e0e0',
                     width: '100%',
                     backgroundColor: '#fff',
-                    cursor: 'pointer',
-                    display: 'none'
+                    cursor: 'pointer'
                   }}
                 />
-              </View>
-            )}
-            
-            {/* Web inline time picker - always visible */}
-            {Platform.OS === 'web' && (
-              <View style={styles.inputGroup}>
+              ) : (
+                <TouchableOpacity 
+                  style={styles.dateTimeButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Ionicons name="calendar-outline" size={20} color="#1565FF" />
+                  <Text style={styles.dateTimeText}>
+                    {date.toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Event Time *</Text>
+              {Platform.OS === 'web' ? (
                 <input
                   type="time"
                   value={`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`}
@@ -526,11 +491,43 @@ export default function CreateEventScreen() {
                     border: '1px solid #e0e0e0',
                     width: '100%',
                     backgroundColor: '#fff',
-                    cursor: 'pointer',
-                    display: 'none'
+                    cursor: 'pointer'
                   }}
                 />
-              </View>
+              ) : (
+                <TouchableOpacity 
+                  style={styles.dateTimeButton}
+                  onPress={() => setShowTimePicker(true)}
+                >
+                  <Ionicons name="time-outline" size={20} color="#1565FF" />
+                  <Text style={styles.dateTimeText}>
+                    {date.toLocaleTimeString('en-US', { 
+                      hour: 'numeric',
+                      minute: '2-digit'
+                    })}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Native pickers for mobile only */}
+            {showDatePicker && Platform.OS !== 'web' && (
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display="default"
+                onChange={onDateChange}
+                minimumDate={new Date()}
+              />
+            )}
+
+            {showTimePicker && Platform.OS !== 'web' && (
+              <DateTimePicker
+                value={date}
+                mode="time"
+                display="default"
+                onChange={onTimeChange}
+              />
             )}
           </View>
 
