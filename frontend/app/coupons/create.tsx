@@ -237,13 +237,29 @@ export default function CreateCouponScreen() {
             </View>
           </View>
 
-          {/* Valid Dates */}
+          {/* Validity Period */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Valid Period</Text>
+            <Text style={styles.sectionTitle}>Validity Period</Text>
             
-            <View style={styles.dateRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.label}>Valid From</Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Valid From</Text>
+              {Platform.OS === 'web' ? (
+                <input
+                  type="date"
+                  value={validFrom.toISOString().split('T')[0]}
+                  onChange={(e) => setValidFrom(new Date(e.target.value))}
+                  min={new Date().toISOString().split('T')[0]}
+                  style={{
+                    padding: '12px',
+                    fontSize: '16px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    width: '100%',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer'
+                  }}
+                />
+              ) : (
                 <TouchableOpacity 
                   style={styles.dateButton}
                   onPress={() => setShowFromPicker(true)}
@@ -253,10 +269,28 @@ export default function CreateCouponScreen() {
                     {validFrom.toLocaleDateString()}
                   </Text>
                 </TouchableOpacity>
-              </View>
+              )}
+            </View>
 
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={styles.label}>Valid Until</Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Valid Until</Text>
+              {Platform.OS === 'web' ? (
+                <input
+                  type="date"
+                  value={validUntil.toISOString().split('T')[0]}
+                  onChange={(e) => setValidUntil(new Date(e.target.value))}
+                  min={validFrom.toISOString().split('T')[0]}
+                  style={{
+                    padding: '12px',
+                    fontSize: '16px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    width: '100%',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer'
+                  }}
+                />
+              ) : (
                 <TouchableOpacity 
                   style={styles.dateButton}
                   onPress={() => setShowUntilPicker(true)}
@@ -266,9 +300,10 @@ export default function CreateCouponScreen() {
                     {validUntil.toLocaleDateString()}
                   </Text>
                 </TouchableOpacity>
-              </View>
+              )}
             </View>
 
+            {/* Native date pickers for mobile only */}
             {showFromPicker && Platform.OS !== 'web' && (
               <DateTimePicker
                 value={validFrom}
@@ -287,59 +322,6 @@ export default function CreateCouponScreen() {
                 onChange={onUntilDateChange}
                 minimumDate={validFrom}
               />
-            )}
-            
-            {/* Web fallback for date pickers */}
-            {Platform.OS === 'web' && showFromPicker && (
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Select Valid From Date</Text>
-                <input
-                  type="date"
-                  value={validFrom.toISOString().split('T')[0]}
-                  onChange={(e) => {
-                    const newDate = new Date(e.target.value);
-                    setValidFrom(newDate);
-                    setShowFromPicker(false);
-                  }}
-                  onBlur={() => setShowFromPicker(false)}
-                  min={new Date().toISOString().split('T')[0]}
-                  autoFocus
-                  style={{
-                    padding: '12px',
-                    fontSize: '16px',
-                    borderRadius: '8px',
-                    border: '2px solid #1565FF',
-                    width: '100%',
-                    backgroundColor: '#fff'
-                  }}
-                />
-              </View>
-            )}
-            
-            {Platform.OS === 'web' && showUntilPicker && (
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Select Valid Until Date</Text>
-                <input
-                  type="date"
-                  value={validUntil.toISOString().split('T')[0]}
-                  onChange={(e) => {
-                    const newDate = new Date(e.target.value);
-                    setValidUntil(newDate);
-                    setShowUntilPicker(false);
-                  }}
-                  onBlur={() => setShowUntilPicker(false)}
-                  min={validFrom.toISOString().split('T')[0]}
-                  autoFocus
-                  style={{
-                    padding: '12px',
-                    fontSize: '16px',
-                    borderRadius: '8px',
-                    border: '2px solid #1565FF',
-                    width: '100%',
-                    backgroundColor: '#fff'
-                  }}
-                />
-              </View>
             )}
           </View>
 
