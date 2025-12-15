@@ -835,14 +835,15 @@ export default function EditBusinessProfile() {
 
       console.log('✅ Business profile saved successfully');
 
+      // Show success message
       if (Platform.OS === 'web') {
         alert('Success! Business profile updated.');
-        router.back(); // Go back to previous screen (dashboard or profile)
       } else {
-        Alert.alert('Success', 'Business profile updated successfully!', [
-          { text: 'OK', onPress: () => router.back() }
-        ]);
+        Alert.alert('Success', 'Business profile updated successfully!');
       }
+      
+      // Navigate back after showing message
+      router.back();
     } catch (error: any) {
       console.error('❌ Error updating profile:', error);
       console.error('Error details:', error.response?.data);
