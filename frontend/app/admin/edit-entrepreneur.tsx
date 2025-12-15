@@ -89,8 +89,10 @@ export default function AdminEditEntrepreneur() {
       setBio(profile.bio || '');
       setOccupations(profile.occupations || [profile.role] || []);
       setProfilePhotoUrl(profile.profile_photo || '');
-      setGalleryUrls(profile.portfolio_photos || []);
+      setGalleryUrls(profile.portfolio_photos || profile.gallery_urls || []);
       setFlyerUrls(profile.flyer_urls || []);
+      
+      console.log('✅ Profile loaded:', profile.user_name);
     } catch (error) {
       console.error('Error loading profile:', error);
       alert('Error loading profile');
@@ -99,15 +101,19 @@ export default function AdminEditEntrepreneur() {
 
   const loadR2Media = async () => {
     try {
+      console.log('📥 Loading R2 media...');
       const token = await AsyncStorage.getItem('auth_token');
-      const response = await axios.get(`${API_URL}/admin/r2-media`, {
+      const response = await axios.get(`${API_URL}/api/admin/r2-media`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { search: mediaSearch, page: mediaPage }
       });
       
-      setR2Media(response.data.media);
-    } catch (error) {
-      console.error('Error loading R2 media:', error);
+      console.log('✅ R2 media loaded:', response.data.media?.length || 0);
+      setR2Media(response.data.media || []);
+    } catch (error: any) {
+      console.error('❌ Error loading R2 media:', error);
+      alert('Error loading R2 media: ' + (error.response?.data?.detail || error.message));
+      setR2Media([]);
     }
   };
 
@@ -199,7 +205,7 @@ export default function AdminEditEntrepreneur() {
               <Text style={styles.userName}>Dboy Stackalini</Text>
               <Ionicons name="chevron-forward" size={20} color="#666" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.userCard} onPress={() => loadUserProfile('82b4d48d-a9cc-4f09-b7ed-28a6daea548a')}>
+            <TouchableOpacity style={styles.userCard} onPress={() => loadUserProfile('82b44d84-a9cc-4f09-b7ed-28a6daea548a')}>
               <Text style={styles.userName}>The Lace Nerd</Text>
               <Ionicons name="chevron-forward" size={20} color="#666" />
             </TouchableOpacity>
@@ -314,7 +320,7 @@ export default function AdminEditEntrepreneur() {
               </TouchableOpacity>
             </View>
             <View style={styles.mediaGrid}>
-              {galleryUrls.map((url, idx) => (
+              {(galleryUrls || []).map((url, idx) => (
                 <View key={idx} style={styles.mediaItem}>
                   <Image source={{ uri: url }} style={styles.gridThumbnail} />
                   <TouchableOpacity
@@ -338,7 +344,7 @@ export default function AdminEditEntrepreneur() {
               </TouchableOpacity>
             </View>
             <View style={styles.mediaGrid}>
-              {flyerUrls.map((url, idx) => (
+              {(flyerUrls || []).map((url, idx) => (
                 <View key={idx} style={styles.mediaItem}>
                   <Image source={{ uri: url }} style={styles.gridThumbnail} />
                   <TouchableOpacity
@@ -377,7 +383,7 @@ export default function AdminEditEntrepreneur() {
           />
 
           <ScrollView style={styles.mediaList}>
-            {r2Media.map((media, idx) => (
+            {(r2Media || []).map((media, idx) => (
               <TouchableOpacity
                 key={idx}
                 style={styles.mediaListItem}
@@ -388,6 +394,11 @@ export default function AdminEditEntrepreneur() {
                 <Ionicons name="add-circle" size={24} color="#4CAF50" />
               </TouchableOpacity>
             ))}
+            {(!r2Media || r2Media.length === 0) && (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={{ color: '#999' }}>No media found</Text>
+              </View>
+            )}
           </ScrollView>
         </SafeAreaView>
       </Modal>

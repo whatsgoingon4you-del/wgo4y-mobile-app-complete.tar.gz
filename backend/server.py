@@ -4998,79 +4998,44 @@ async def admin_update_entrepreneur(
         'state': updated.get('state')
     }}
 
+
+@api_router.post("/admin/impersonate/{user_id}")
+async def impersonate_user(user_id: str, user: Dict = Depends(get_current_user)):
+    """Impersonate a user (admin only)"""
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Find target user
+    target_user = await db.users.find_one({'id': user_id})
+    if not target_user:
+        target_user = await db.users.find_one({'_id': user_id})
+    
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Log impersonation for audit
+    print(f"🔐 ADMIN IMPERSONATION: {user.get('full_name')} → {target_user.get('full_name')}")
+    
+    # Create token for target user
+    token = create_token(target_user['_id'])
+    
+    return {
+        'token': token,
+        'user': {
+            'id': target_user.get('id') or target_user.get('_id'),
+            'username': target_user['username'],
+            'email': target_user['email'],
+            'user_type': target_user['user_type'],
+            'full_name': target_user.get('full_name'),
+            'membership_tier': target_user.get('membership_tier')
+        },
+        'impersonated_by': user.get('full_name'),
+        'is_impersonation': True
+    }
+
+
 # Mount the router
 app.include_router(api_router)
-                '_id': str(uuid.uuid4()),
-                'username': 'one_mansion',
-                'email': 'info@onemansion.com',
-                'password_hash': hashed_pw,
-                'full_name': 'One Mansion',
-                'user_type': 'business',
-                'membership_tier': 'gold',
-                'is_demo_profile': False,
-                'onboarding_completed': True,
-                'photo_url': f'{R2}/La-Mansion.png',
-                'business_name': 'One Mansion',
-                'business_type': 'nightclub',
-                'business_address': 'Las Vegas, NV',
-                'business_phone': '702-555-0300',
-                'city': 'Las Vegas',
-                'state': 'Nevada',
-                'description': 'Upscale nightclub and premier event venue',
-                'amenities': ['VIP Areas', 'Full Bar', 'Dance Floor', 'DJ', 'Bottle Service'],
-                'venue_photos': [f'{R2}/La-Mansion.png'],
-                'created_at': datetime.now(timezone.utc)
-            }
-        ]
-        
-        # Insert all users
-        inserted = 0
-        for user in profiles:
-            existing_user = await db.users.find_one({'email': user['email']})
-            if not existing_user:
-                await db.users.insert_one(user)
-                inserted += 1
-        
-        # Configure logo
-        await db.app_config.update_one(
-            {'_id': 'branding'},
-            {
-                '$set': {
-                    'logo_url': f'{R2}/WGO4Y%20Logo.png',
-                    'app_name': "What's Going On 4 You",
-                    'app_short_name': 'WGO4Y',
-                    'updated_at': datetime.now(timezone.utc)
-                }
-            },
-            upsert=True
-        )
-        
-        final_count = await db.users.count_documents({})
-        
-        return {
-            "status": "success",
-            "users_created": inserted,
-            "total_users": final_count,
-            "password": "Test1234",
-            "message": "Production database populated! All accounts use password: Test1234",
-            "accounts": [
-                "dboy_stackalini_rap_producer_s@wgo4y.com",
-                "d_petty@wgo4y.com",
-                "lacemirror@wgo4y.com",
-                "la_mansion_premier_event_venue@wgo4y.com",
-                "info@mcclellans.com",
-                "info@rackemup.com",
-                "info@onemansion.com"
-            ]
-        }
-        
-    except Exception as e:
-        import traceback
-        return {
-            "status": "error",
-            "message": str(e),
-            "traceback": traceback.format_exc()
-        }
 
 
 
