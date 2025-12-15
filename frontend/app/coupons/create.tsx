@@ -301,13 +301,16 @@ export default function CreateCouponScreen() {
                     setValidFrom(newDate);
                     setShowFromPicker(false);
                   }}
+                  onBlur={() => setShowFromPicker(false)}
                   min={new Date().toISOString().split('T')[0]}
+                  autoFocus
                   style={{
                     padding: '12px',
                     fontSize: '16px',
                     borderRadius: '8px',
-                    border: '1px solid #e0e0e0',
-                    width: '100%'
+                    border: '2px solid #1565FF',
+                    width: '100%',
+                    backgroundColor: '#fff'
                   }}
                 />
               </View>
@@ -324,13 +327,16 @@ export default function CreateCouponScreen() {
                     setValidUntil(newDate);
                     setShowUntilPicker(false);
                   }}
+                  onBlur={() => setShowUntilPicker(false)}
                   min={validFrom.toISOString().split('T')[0]}
+                  autoFocus
                   style={{
                     padding: '12px',
                     fontSize: '16px',
                     borderRadius: '8px',
-                    border: '1px solid #e0e0e0',
-                    width: '100%'
+                    border: '2px solid #1565FF',
+                    width: '100%',
+                    backgroundColor: '#fff'
                   }}
                 />
               </View>
