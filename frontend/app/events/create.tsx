@@ -230,7 +230,7 @@ export default function CreateEventScreen() {
       }
       
       // Navigate to my-events page after successful creation
-      router.push('/my-events');
+      router.replace('/my-events');
     } catch (error: any) {
       console.error('Error creating event:', error);
       Alert.alert('Error', error.response?.data?.detail || 'Failed to create event');
@@ -263,7 +263,7 @@ export default function CreateEventScreen() {
         style={{ flex: 1 }}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => router.replace('/my-events')} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Create Event</Text>
