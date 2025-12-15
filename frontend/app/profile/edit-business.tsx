@@ -360,8 +360,19 @@ export default function EditBusinessProfile() {
       }
 
       // Operating Hours - Convert from 24-hour to 12-hour format
+      // Start with default hours for all days
+      const defaultHours: Record<string, DayHours> = {
+        Monday: { isOpen: true, openHour: '9', openMinute: '00', openPeriod: 'AM', closeHour: '5', closeMinute: '00', closePeriod: 'PM' },
+        Tuesday: { isOpen: true, openHour: '9', openMinute: '00', openPeriod: 'AM', closeHour: '5', closeMinute: '00', closePeriod: 'PM' },
+        Wednesday: { isOpen: true, openHour: '9', openMinute: '00', openPeriod: 'AM', closeHour: '5', closeMinute: '00', closePeriod: 'PM' },
+        Thursday: { isOpen: true, openHour: '9', openMinute: '00', openPeriod: 'AM', closeHour: '5', closeMinute: '00', closePeriod: 'PM' },
+        Friday: { isOpen: true, openHour: '9', openMinute: '00', openPeriod: 'AM', closeHour: '5', closeMinute: '00', closePeriod: 'PM' },
+        Saturday: { isOpen: true, openHour: '10', openMinute: '00', openPeriod: 'AM', closeHour: '6', closeMinute: '00', closePeriod: 'PM' },
+        Sunday: { isOpen: false, openHour: '10', openMinute: '00', openPeriod: 'AM', closeHour: '6', closeMinute: '00', closePeriod: 'PM' },
+      };
+      
       if (profile.business_hours) {
-        const convertedHours: Record<string, DayHours> = {};
+        const convertedHours: Record<string, DayHours> = { ...defaultHours }; // Start with defaults
         Object.entries(profile.business_hours).forEach(([day, dayData]: [string, any]) => {
           // Ensure we have valid time strings, default to 9 AM - 5 PM
           const openTimeStr = (dayData?.open && typeof dayData.open === 'string') ? dayData.open : '09:00';
@@ -380,6 +391,9 @@ export default function EditBusinessProfile() {
           };
         });
         setHours(convertedHours);
+      } else {
+        // No business hours in profile - use defaults
+        setHours(defaultHours);
       }
 
       // Categories & Amenities
@@ -1481,6 +1495,15 @@ export default function EditBusinessProfile() {
                         <TouchableOpacity
                           onPress={() => {
                             console.log(`🔄 Toggling ${day} - current: ${hours[day]?.isOpen}`);
+                            // Defensive check - ensure hours[day] exists
+                            if (!hours[day]) {
+                              console.warn(`⚠️ hours[${day}] is undefined, initializing...`);
+                              setHours({
+                                ...hours,
+                                [day]: { isOpen: true, openHour: '9', openMinute: '00', openPeriod: 'AM', closeHour: '5', closeMinute: '00', closePeriod: 'PM' }
+                              });
+                              return;
+                            }
                             setHours({
                               ...hours,
                               [day]: { ...hours[day], isOpen: !hours[day].isOpen }
