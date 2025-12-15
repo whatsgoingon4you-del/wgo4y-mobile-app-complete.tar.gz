@@ -653,18 +653,30 @@ export default function EditBusinessProfile() {
     }
 
     if (!newVideoUrl.trim()) {
-      Alert.alert('Missing URL', 'Please enter a video URL');
+      if (Platform.OS === 'web') {
+        alert('Please enter a video URL');
+      } else {
+        Alert.alert('Missing URL', 'Please enter a video URL');
+      }
       return;
     }
 
     if (!isValidVideoUrl(newVideoUrl)) {
-      Alert.alert('Invalid URL', 'Please enter a valid YouTube or Vimeo URL');
+      if (Platform.OS === 'web') {
+        alert('Please enter a valid YouTube or Vimeo URL');
+      } else {
+        Alert.alert('Invalid URL', 'Please enter a valid YouTube or Vimeo URL');
+      }
       return;
     }
 
     const parsedVideo = parseVideoUrl(newVideoUrl);
     if (!parsedVideo) {
-      Alert.alert('Invalid URL', 'Could not parse video URL');
+      if (Platform.OS === 'web') {
+        alert('Could not parse video URL');
+      } else {
+        Alert.alert('Invalid URL', 'Could not parse video URL');
+      }
       return;
     }
 
@@ -682,7 +694,11 @@ export default function EditBusinessProfile() {
     setNewVideoUrl('');
     setNewVideoTitle('');
 
-    Alert.alert('Success', 'Video added successfully');
+    if (Platform.OS === 'web') {
+      alert('Success! Video added successfully.');
+    } else {
+      Alert.alert('Success', 'Video added successfully');
+    }
   };
 
   const removePortfolioVideo = (index: number) => {
