@@ -260,78 +260,65 @@ export default function CreateRaffleScreen() {
             
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Start Date</Text>
-              <TouchableOpacity 
-                style={styles.dateButton}
-                onPress={() => setShowStartPicker(true)}
-              >
-                <Ionicons name="calendar-outline" size={20} color="#1565FF" />
-                <Text style={styles.dateText}>
-                  {startDate.toLocaleDateString()}
-                </Text>
-              </TouchableOpacity>
+              {Platform.OS === 'web' ? (
+                <input
+                  type="date"
+                  value={startDate.toISOString().split('T')[0]}
+                  onChange={(e) => setStartDate(new Date(e.target.value))}
+                  min={new Date().toISOString().split('T')[0]}
+                  style={{
+                    padding: '12px',
+                    fontSize: '16px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    width: '100%',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer'
+                  }}
+                />
+              ) : (
+                <TouchableOpacity 
+                  style={styles.dateButton}
+                  onPress={() => setShowStartPicker(true)}
+                >
+                  <Ionicons name="calendar-outline" size={20} color="#1565FF" />
+                  <Text style={styles.dateText}>
+                    {startDate.toLocaleDateString()}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>End Date</Text>
-              <TouchableOpacity 
-                style={styles.dateButton}
-                onPress={() => setShowEndPicker(true)}
-              >
-                <Ionicons name="calendar-outline" size={20} color="#1565FF" />
-                <Text style={styles.dateText}>
-                  {endDate.toLocaleDateString()}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Web date pickers */}
-            {Platform.OS === 'web' && showStartPicker && (
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Select Start Date</Text>
-                <input
-                  type="date"
-                  value={startDate.toISOString().split('T')[0]}
-                  onChange={(e) => {
-                    setStartDate(new Date(e.target.value));
-                    setShowStartPicker(false);
-                  }}
-                  onBlur={() => setShowStartPicker(false)}
-                  min={new Date().toISOString().split('T')[0]}
-                  autoFocus
-                  style={{
-                    padding: '12px',
-                    fontSize: '16px',
-                    borderRadius: '8px',
-                    border: '2px solid #1565FF',
-                    width: '100%'
-                  }}
-                />
-              </View>
-            )}
-            
-            {Platform.OS === 'web' && showEndPicker && (
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Select End Date</Text>
+              {Platform.OS === 'web' ? (
                 <input
                   type="date"
                   value={endDate.toISOString().split('T')[0]}
-                  onChange={(e) => {
-                    setEndDate(new Date(e.target.value));
-                    setShowEndPicker(false);
-                  }}
-                  onBlur={() => setShowEndPicker(false)}
+                  onChange={(e) => setEndDate(new Date(e.target.value))}
                   min={startDate.toISOString().split('T')[0]}
-                  autoFocus
                   style={{
                     padding: '12px',
                     fontSize: '16px',
                     borderRadius: '8px',
-                    border: '2px solid #1565FF',
-                    width: '100%'
+                    border: '1px solid #e0e0e0',
+                    width: '100%',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer'
                   }}
                 />
-              </View>
-            )}
+              ) : (
+                <TouchableOpacity 
+                  style={styles.dateButton}
+                  onPress={() => setShowEndPicker(true)}
+                >
+                  <Ionicons name="calendar-outline" size={20} color="#1565FF" />
+                  <Text style={styles.dateText}>
+                    {endDate.toLocaleDateString()}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           {/* Status */}
