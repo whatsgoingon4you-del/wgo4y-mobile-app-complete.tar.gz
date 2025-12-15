@@ -479,19 +479,17 @@ export default function CreateEventScreen() {
               />
             )}
             
-            {/* Web fallback for date picker */}
-            {Platform.OS === 'web' && showDatePicker && (
+            {/* Web inline date picker - always visible */}
+            {Platform.OS === 'web' && (
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Select Event Date</Text>
                 <input
                   type="date"
                   value={date.toISOString().split('T')[0]}
                   onChange={(e) => {
-                    const newDate = new Date(e.target.value);
-                    newDate.setHours(date.getHours());
-                    newDate.setMinutes(date.getMinutes());
-                    setDate(newDate);
-                    setShowDatePicker(false);
+                    const selectedDate = new Date(e.target.value + 'T12:00:00');
+                    selectedDate.setHours(date.getHours());
+                    selectedDate.setMinutes(date.getMinutes());
+                    setDate(selectedDate);
                   }}
                   min={new Date().toISOString().split('T')[0]}
                   style={{
@@ -499,16 +497,18 @@ export default function CreateEventScreen() {
                     fontSize: '16px',
                     borderRadius: '8px',
                     border: '1px solid #e0e0e0',
-                    width: '100%'
+                    width: '100%',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer',
+                    display: 'none'
                   }}
                 />
               </View>
             )}
             
-            {/* Web fallback for time picker */}
-            {Platform.OS === 'web' && showTimePicker && (
+            {/* Web inline time picker - always visible */}
+            {Platform.OS === 'web' && (
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Select Event Time</Text>
                 <input
                   type="time"
                   value={`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`}
@@ -518,14 +518,16 @@ export default function CreateEventScreen() {
                     newDate.setHours(parseInt(hours));
                     newDate.setMinutes(parseInt(minutes));
                     setDate(newDate);
-                    setShowTimePicker(false);
                   }}
                   style={{
                     padding: '12px',
                     fontSize: '16px',
                     borderRadius: '8px',
                     border: '1px solid #e0e0e0',
-                    width: '100%'
+                    width: '100%',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer',
+                    display: 'none'
                   }}
                 />
               </View>
