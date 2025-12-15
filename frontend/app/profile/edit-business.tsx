@@ -819,9 +819,11 @@ export default function EditBusinessProfile() {
 
     setSaving(true);
     try {
+      console.log('💾 Starting profile save...');
       const token = await AsyncStorage.getItem('auth_token');
       const fullAddress = `${street}, ${city}, ${state} ${zipCode}`;
 
+      console.log('📤 Sending profile update to API...');
       const response = await axios.put(
         `${API_URL}/api/profile`,
         {
@@ -863,12 +865,15 @@ export default function EditBusinessProfile() {
         }
       );
 
+      console.log('✅ API response received:', response.status);
+
       // Update AsyncStorage
       const userData = await AsyncStorage.getItem('user');
       if (userData) {
         const user = JSON.parse(userData);
         const updatedUser = { ...user, ...response.data };
         await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        console.log('💾 Updated user data in storage');
       }
 
       console.log('✅ Business profile saved successfully');
@@ -880,11 +885,15 @@ export default function EditBusinessProfile() {
         Alert.alert('Success', 'Business profile updated successfully!');
       }
       
-      // Navigate back after showing message
-      router.back();
+      console.log('🔙 Navigating back to profile...');
+      // Use push instead of back for better web compatibility
+      setTimeout(() => {
+        router.push('/profile');
+      }, 100);
     } catch (error: any) {
       console.error('❌ Error updating profile:', error);
-      console.error('Error details:', error.response?.data);
+      console.error('❌ Error details:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
       
       const errorMsg = error.response?.data?.detail || 'Failed to update profile';
       
@@ -894,6 +903,7 @@ export default function EditBusinessProfile() {
         Alert.alert('Error', errorMsg);
       }
     } finally {
+      console.log('🏁 Save process complete');
       setSaving(false);
     }
   };
