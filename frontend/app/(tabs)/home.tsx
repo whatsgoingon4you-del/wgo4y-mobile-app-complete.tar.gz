@@ -25,7 +25,7 @@ import ProfileCompletionModal from '../../components/ProfileCompletionModal';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.7;
-const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
+const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
 
 interface Category {
   id: string;
