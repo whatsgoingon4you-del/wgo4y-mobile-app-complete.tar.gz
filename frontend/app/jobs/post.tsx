@@ -128,11 +128,12 @@ export default function PostJobScreen() {
         {
           title: title.trim(),
           role: role.trim(),
-          event_date: eventDate.trim() || null,
+          event_date: eventDate ? eventDate.toLocaleDateString() : null,
           city: city.trim(),
           state,
           pay: pay.trim() || null,
           description: description.trim(),
+          status: status,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -147,7 +148,7 @@ export default function PostJobScreen() {
       }
       
       // Navigate back to jobs list
-      router.back();
+      router.replace('/jobs');
     } catch (error: any) {
       console.error('Error posting job:', error);
       Alert.alert('Error', error.response?.data?.detail || 'Failed to post job');
