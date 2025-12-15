@@ -4897,7 +4897,11 @@ async def populate_db_get(secret: str):
                 'amenities': ['Pool Tables', 'Bar', 'Gaming', 'Food Service', 'Events'],
                 'venue_photos': [f'{R2}/6-copy.jpg'],
                 'created_at': datetime.now(timezone.utc)
-            },
+            }
+        ]
+        
+        for demo_venue in demo_venues:
+            await db.venues.insert_one(demo_venue)
 
 # ============= ADMIN R2 MEDIA & PROFILE MANAGEMENT =============
 
