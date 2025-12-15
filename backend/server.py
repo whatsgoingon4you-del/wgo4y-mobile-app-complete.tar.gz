@@ -2400,15 +2400,19 @@ async def get_raffle(raffle_id: str, user: Dict = Depends(get_current_user)):
 
 @api_router.post("/raffles")
 async def create_raffle(raffle_data: RaffleCreate, user: Dict = Depends(get_current_user)):
-    """Create a raffle (admin only for now)"""
-    # Check if user is admin
-    if not user.get('is_admin', False):
-        raise HTTPException(status_code=403, detail="Only admins can create raffles")
+    """Create a raffle (Business and Entrepreneur only)"""
+    # Only businesses and entrepreneurs can create raffles
+    if user.get('user_type') not in ['business', 'entrepreneur']:
+        raise HTTPException(status_code=403, detail="Only venues and entrepreneurs can create raffles")
     
     import uuid
     raffle_id = str(uuid.uuid4())
     raffle_dict = raffle_data.dict()
     raffle_dict['_id'] = raffle_id
+    raffle_dict['owner_id'] = user['_id']  # Track who created it
+    raffle_dict['created_by'] = user['_id']  # Also use created_by for consistency
+    raffle_dict['owner_name'] = user.get('business_name') or user.get('full_name') or user.get('username')
+    raffle_dict['owner_type'] = user.get('user_type')
     raffle_dict['created_at'] = datetime.utcnow()
     raffle_dict['updated_at'] = datetime.utcnow()
     raffle_dict['winner_user_id'] = None
@@ -2416,6 +2420,7 @@ async def create_raffle(raffle_data: RaffleCreate, user: Dict = Depends(get_curr
     raffle_dict['winner_selected_at'] = None
     
     await db.raffles.insert_one(raffle_dict)
+    print(f"✅ Raffle created: {raffle_data.title} by {raffle_dict['owner_name']}")
     return {**raffle_dict, 'id': raffle_id}
 
 @api_router.post("/raffles/{raffle_id}/enter")
