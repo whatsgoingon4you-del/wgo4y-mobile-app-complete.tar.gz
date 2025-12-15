@@ -1493,78 +1493,192 @@ export default function EditBusinessProfile() {
                         <View style={styles.timePickerSection}>
                           <Text style={styles.timeLabel}>Open:</Text>
                           <View style={styles.timePickerRow}>
-                            <View style={styles.smallPickerContainer}>
-                              <Picker
-                                selectedValue={hours[day]?.openHour}
-                                onValueChange={(value) => updateDayTime(day, 'openHour', value)}
-                                style={styles.smallPicker}
-                              >
-                                {HOURS.map((h) => (
-                                  <Picker.Item key={h} label={h} value={h} />
-                                ))}
-                              </Picker>
-                            </View>
-                            <Text style={styles.timeSeparator}>:</Text>
-                            <View style={styles.smallPickerContainer}>
-                              <Picker
-                                selectedValue={hours[day]?.openMinute}
-                                onValueChange={(value) => updateDayTime(day, 'openMinute', value)}
-                                style={styles.smallPicker}
-                              >
-                                {MINUTES.map((m) => (
-                                  <Picker.Item key={m} label={m} value={m} />
-                                ))}
-                              </Picker>
-                            </View>
-                            <View style={styles.periodPickerContainer}>
-                              <Picker
-                                selectedValue={hours[day]?.openPeriod}
-                                onValueChange={(value) => updateDayTime(day, 'openPeriod', value)}
-                                style={styles.smallPicker}
-                              >
-                                {PERIODS.map((p) => (
-                                  <Picker.Item key={p} label={p} value={p} />
-                                ))}
-                              </Picker>
-                            </View>
+                            {Platform.OS === 'web' ? (
+                              <>
+                                <select
+                                  value={hours[day]?.openHour}
+                                  onChange={(e) => updateDayTime(day, 'openHour', e.target.value)}
+                                  style={{
+                                    padding: '8px',
+                                    fontSize: '16px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    backgroundColor: '#fff',
+                                    width: '70px'
+                                  }}
+                                >
+                                  {HOURS.map((h) => (
+                                    <option key={h} value={h}>{h}</option>
+                                  ))}
+                                </select>
+                                <Text style={styles.timeSeparator}>:</Text>
+                                <select
+                                  value={hours[day]?.openMinute}
+                                  onChange={(e) => updateDayTime(day, 'openMinute', e.target.value)}
+                                  style={{
+                                    padding: '8px',
+                                    fontSize: '16px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    backgroundColor: '#fff',
+                                    width: '70px'
+                                  }}
+                                >
+                                  {MINUTES.map((m) => (
+                                    <option key={m} value={m}>{m}</option>
+                                  ))}
+                                </select>
+                                <select
+                                  value={hours[day]?.openPeriod}
+                                  onChange={(e) => updateDayTime(day, 'openPeriod', e.target.value)}
+                                  style={{
+                                    padding: '8px',
+                                    fontSize: '16px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    backgroundColor: '#fff',
+                                    width: '70px',
+                                    marginLeft: '8px'
+                                  }}
+                                >
+                                  {PERIODS.map((p) => (
+                                    <option key={p} value={p}>{p}</option>
+                                  ))}
+                                </select>
+                              </>
+                            ) : (
+                              <>
+                                <View style={styles.smallPickerContainer}>
+                                  <Picker
+                                    selectedValue={hours[day]?.openHour}
+                                    onValueChange={(value) => updateDayTime(day, 'openHour', value)}
+                                    style={styles.smallPicker}
+                                  >
+                                    {HOURS.map((h) => (
+                                      <Picker.Item key={h} label={h} value={h} />
+                                    ))}
+                                  </Picker>
+                                </View>
+                                <Text style={styles.timeSeparator}>:</Text>
+                                <View style={styles.smallPickerContainer}>
+                                  <Picker
+                                    selectedValue={hours[day]?.openMinute}
+                                    onValueChange={(value) => updateDayTime(day, 'openMinute', value)}
+                                    style={styles.smallPicker}
+                                  >
+                                    {MINUTES.map((m) => (
+                                      <Picker.Item key={m} label={m} value={m} />
+                                    ))}
+                                  </Picker>
+                                </View>
+                                <View style={styles.periodPickerContainer}>
+                                  <Picker
+                                    selectedValue={hours[day]?.openPeriod}
+                                    onValueChange={(value) => updateDayTime(day, 'openPeriod', value)}
+                                    style={styles.smallPicker}
+                                  >
+                                    {PERIODS.map((p) => (
+                                      <Picker.Item key={p} label={p} value={p} />
+                                    ))}
+                                  </Picker>
+                                </View>
+                              </>
+                            )}
                           </View>
 
                           <Text style={styles.timeLabel}>Close:</Text>
                           <View style={styles.timePickerRow}>
-                            <View style={styles.smallPickerContainer}>
-                              <Picker
-                                selectedValue={hours[day]?.closeHour}
-                                onValueChange={(value) => updateDayTime(day, 'closeHour', value)}
-                                style={styles.smallPicker}
-                              >
-                                {HOURS.map((h) => (
-                                  <Picker.Item key={h} label={h} value={h} />
-                                ))}
-                              </Picker>
-                            </View>
-                            <Text style={styles.timeSeparator}>:</Text>
-                            <View style={styles.smallPickerContainer}>
-                              <Picker
-                                selectedValue={hours[day]?.closeMinute}
-                                onValueChange={(value) => updateDayTime(day, 'closeMinute', value)}
-                                style={styles.smallPicker}
-                              >
-                                {MINUTES.map((m) => (
-                                  <Picker.Item key={m} label={m} value={m} />
-                                ))}
-                              </Picker>
-                            </View>
-                            <View style={styles.periodPickerContainer}>
-                              <Picker
-                                selectedValue={hours[day]?.closePeriod}
-                                onValueChange={(value) => updateDayTime(day, 'closePeriod', value)}
-                                style={styles.smallPicker}
-                              >
-                                {PERIODS.map((p) => (
-                                  <Picker.Item key={p} label={p} value={p} />
-                                ))}
-                              </Picker>
-                            </View>
+                            {Platform.OS === 'web' ? (
+                              <>
+                                <select
+                                  value={hours[day]?.closeHour}
+                                  onChange={(e) => updateDayTime(day, 'closeHour', e.target.value)}
+                                  style={{
+                                    padding: '8px',
+                                    fontSize: '16px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    backgroundColor: '#fff',
+                                    width: '70px'
+                                  }}
+                                >
+                                  {HOURS.map((h) => (
+                                    <option key={h} value={h}>{h}</option>
+                                  ))}
+                                </select>
+                                <Text style={styles.timeSeparator}>:</Text>
+                                <select
+                                  value={hours[day]?.closeMinute}
+                                  onChange={(e) => updateDayTime(day, 'closeMinute', e.target.value)}
+                                  style={{
+                                    padding: '8px',
+                                    fontSize: '16px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    backgroundColor: '#fff',
+                                    width: '70px'
+                                  }}
+                                >
+                                  {MINUTES.map((m) => (
+                                    <option key={m} value={m}>{m}</option>
+                                  ))}
+                                </select>
+                                <select
+                                  value={hours[day]?.closePeriod}
+                                  onChange={(e) => updateDayTime(day, 'closePeriod', e.target.value)}
+                                  style={{
+                                    padding: '8px',
+                                    fontSize: '16px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    backgroundColor: '#fff',
+                                    width: '70px',
+                                    marginLeft: '8px'
+                                  }}
+                                >
+                                  {PERIODS.map((p) => (
+                                    <option key={p} value={p}>{p}</option>
+                                  ))}
+                                </select>
+                              </>
+                            ) : (
+                              <>
+                                <View style={styles.smallPickerContainer}>
+                                  <Picker
+                                    selectedValue={hours[day]?.closeHour}
+                                    onValueChange={(value) => updateDayTime(day, 'closeHour', value)}
+                                    style={styles.smallPicker}
+                                  >
+                                    {HOURS.map((h) => (
+                                      <Picker.Item key={h} label={h} value={h} />
+                                    ))}
+                                  </Picker>
+                                </View>
+                                <Text style={styles.timeSeparator}>:</Text>
+                                <View style={styles.smallPickerContainer}>
+                                  <Picker
+                                    selectedValue={hours[day]?.closeMinute}
+                                    onValueChange={(value) => updateDayTime(day, 'closeMinute', value)}
+                                    style={styles.smallPicker}
+                                  >
+                                    {MINUTES.map((m) => (
+                                      <Picker.Item key={m} label={m} value={m} />
+                                    ))}
+                                  </Picker>
+                                </View>
+                                <View style={styles.periodPickerContainer}>
+                                  <Picker
+                                    selectedValue={hours[day]?.closePeriod}
+                                    onValueChange={(value) => updateDayTime(day, 'closePeriod', value)}
+                                    style={styles.smallPicker}
+                                  >
+                                    {PERIODS.map((p) => (
+                                      <Picker.Item key={p} label={p} value={p} />
+                                    ))}
+                                  </Picker>
+                                </View>
+                              </>
+                            )}
                           </View>
                         </View>
                       )}
