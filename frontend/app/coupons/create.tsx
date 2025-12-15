@@ -367,7 +367,31 @@ export default function CreateCouponScreen() {
 
           {/* Usage Limits */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Usage Limits</Text>
+            <Text style={styles.sectionTitle}>Usage Limits & Restrictions</Text>
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Age Restriction (Optional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., Must be 21+ or 18+"
+                value={ageRestriction}
+                onChangeText={setAgeRestriction}
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Exclusions / Terms (Optional)</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="e.g., Not valid with other offers, One per customer, etc."
+                value={exclusions}
+                onChangeText={setExclusions}
+                multiline
+                numberOfLines={3}
+                placeholderTextColor="#999"
+              />
+            </View>
             
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Uses Per Person *</Text>
