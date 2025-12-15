@@ -886,9 +886,9 @@ export default function EditBusinessProfile() {
       }
       
       console.log('🔙 Navigating back to profile...');
-      // Use push instead of back for better web compatibility
+      // Use replace instead of push to prevent navigation loop
       setTimeout(() => {
-        router.push('/profile');
+        router.replace('/profile');
       }, 100);
     } catch (error: any) {
       console.error('❌ Error updating profile:', error);
@@ -927,7 +927,7 @@ export default function EditBusinessProfile() {
           <TouchableOpacity 
             onPress={() => {
               console.log('🔙 Back button pressed');
-              router.push('/profile');
+              router.replace('/profile');
             }} 
             style={styles.backButton}
           >
