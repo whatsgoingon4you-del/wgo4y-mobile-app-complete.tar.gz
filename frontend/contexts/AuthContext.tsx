@@ -5,6 +5,11 @@ import Constants from 'expo-constants';
 
 const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
 
+// Debug: Log the API URL being used
+console.log('🔗 API_URL configured as:', API_URL);
+console.log('🔗 Constants.expoConfig?.extra:', Constants.expoConfig?.extra);
+console.log('🔗 process.env.EXPO_PUBLIC_BACKEND_URL:', process.env.EXPO_PUBLIC_BACKEND_URL);
+
 interface User {
   id: string;
   username: string;
