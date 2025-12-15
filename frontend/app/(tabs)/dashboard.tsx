@@ -149,6 +149,18 @@ export default function Dashboard() {
     if (user?.user_type === 'business') {
       return [
         ...adminItems,
+        { id: 'my-events', title: 'My Events', icon: 'calendar', route: '/my-events' },
+        { id: 'my-coupons', title: 'My Coupons', icon: 'pricetag', route: '/my-coupons' },
+        { id: 'my-raffles', title: 'My Raffles', icon: 'gift', route: '/my-raffles' },
+        { id: 'jobs', title: 'Job Board', icon: 'briefcase', route: '/jobs' },
+        { id: 'workers', title: 'Find Workers', icon: 'people', route: '/workers' },
+        { id: 'vip', title: 'VIP Offerings', icon: 'star', route: '/vip' },
+        { id: 'profile', title: 'My Profile', icon: 'person', route: '/profile' },
+        { id: 'analytics', title: 'Analytics', icon: 'bar-chart', route: '/analytics' },
+        ...commonItems,
+      ];
+    }
+        ...adminItems,
         ...commonItems,
         { id: 'events', title: 'My Events', icon: 'calendar', route: '/my-events' },
         { id: 'consultant', title: 'Consulting', icon: 'people', route: '/consultant' },
