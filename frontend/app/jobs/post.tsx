@@ -18,6 +18,7 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
+import { ALL_SERVICES } from '../onboarding/entrepreneur/servicesData';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
 
@@ -81,11 +82,15 @@ export default function PostJobScreen() {
   // Form fields
   const [title, setTitle] = useState('');
   const [role, setRole] = useState('');
-  const [eventDate, setEventDate] = useState('');
+  const [roleSearch, setRoleSearch] = useState('');
+  const [showRolePicker, setShowRolePicker] = useState(false);
+  const [eventDate, setEventDate] = useState<Date | null>(null);
+  const [showEventDatePicker, setShowEventDatePicker] = useState(false);
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [pay, setPay] = useState('');
   const [description, setDescription] = useState('');
+  const [status, setStatus] = useState('active');
 
   const handleSubmit = async () => {
     // Validation
