@@ -3067,28 +3067,36 @@ async def get_workers(
     # Note: State filtering may not work perfectly for entrepreneurs without worker_profiles
     # as their location might not have state separately
     
-    entrepreneurs = await db.users.find(entrepreneur_query, {'_id': 0}).sort('created_at', -1).to_list(1000)
+    entrepreneurs = await db.users.find(entrepreneur_query).sort('created_at', -1).to_list(1000)
     
     for entr in entrepreneurs:
+        user_id = entr.get('id') or entr.get('_id')
+        if user_id in seen_user_ids:
+            continue  # Skip duplicates
+        seen_user_ids.add(user_id)
+        
         # Create a worker-like structure from entrepreneur user data
         enriched.append({
-            'id': entr.get('id'),
-            'user_id': entr.get('id'),
+            'id': user_id,  # Ensure id is always set
+            'user_id': user_id,
             'user_name': entr.get('full_name') or entr.get('service_name') or entr.get('username'),
+            'service_name': entr.get('service_name'),
             'user_email': entr.get('email'),
             'user_phone': entr.get('phone'),
             'profile_photo': entr.get('profile_photo'),
             'bio': entr.get('bio'),
             'location': entr.get('location'),
-            'city': entr.get('location'),  # Approximate
-            'state': None,  # May not be available
+            'city': entr.get('city'),  # Use actual city field
+            'state': entr.get('state'),  # Use actual state field
             'role': ', '.join(entr.get('occupations', [])) if entr.get('occupations') else 'Entrepreneur',
-            'status': 'approved',  # Treat completed entrepreneurs as approved
+            'status': 'approved',
             'years_experience': entr.get('years_experience'),
             'portfolio_photos': entr.get('portfolio_photos', []),
             'services_offered': entr.get('services_offered', []),
             'rate_structure': entr.get('rate_structure'),
-            'created_at': entr.get('created_at')
+            'created_at': entr.get('created_at'),
+            'is_showcase': entr.get('is_showcase', False),
+            'showcase_label': entr.get('showcase_label')
         })
     
     print(f"✅ Returned {len(enriched)} workers ({len(workers)} from worker_profiles, {len(entrepreneurs)} entrepreneurs)")
