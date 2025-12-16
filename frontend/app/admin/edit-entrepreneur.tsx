@@ -131,6 +131,8 @@ export default function AdminEditEntrepreneur() {
       alert('Error: ' + (error.response?.data?.detail || 'Failed to impersonate'));
     }
   };
+
+  const loadR2Media = async () => {
     try {
       console.log('📥 Loading R2 media...');
       const token = await AsyncStorage.getItem('auth_token');
@@ -328,14 +330,33 @@ export default function AdminEditEntrepreneur() {
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Bio</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Professional bio..."
-              multiline
-              numberOfLines={4}
-            />
+            {Platform.OS === 'web' ? (
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Professional bio..."
+                rows={4}
+                style={{
+                  borderWidth: '1px',
+                  borderColor: '#ddd',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  fontSize: '16px',
+                  fontFamily: 'inherit',
+                  width: '100%',
+                  resize: 'vertical'
+                }}
+              />
+            ) : (
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={bio}
+                onChangeText={setBio}
+                placeholder="Professional bio..."
+                multiline
+                numberOfLines={4}
+              />
+            )}
           </View>
         </View>
 

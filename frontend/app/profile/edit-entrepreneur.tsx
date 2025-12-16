@@ -33,7 +33,7 @@ import { isValidPhoneNumber } from '../../utils/phoneFormatter';
 import { parseVideoUrl, isValidVideoUrl } from '../../utils/videoUtils';
 import { parseMusicUrl, isValidMusicUrl, getMusicPlatformIcon, getMusicPlatformColor, getMusicPlatformName } from '../../utils/musicUtils';
 
-const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
