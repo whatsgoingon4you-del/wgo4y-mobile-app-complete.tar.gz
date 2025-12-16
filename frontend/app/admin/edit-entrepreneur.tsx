@@ -44,6 +44,8 @@ export default function AdminEditEntrepreneur() {
   const [r2Media, setR2Media] = useState<any[]>([]);
   const [mediaSearch, setMediaSearch] = useState('');
   const [mediaPage, setMediaPage] = useState(1);
+  const [originalAdminToken, setOriginalAdminToken] = useState<string | null>(null);
+  const [isImpersonating, setIsImpersonating] = useState(false);
 
   useEffect(() => {
     loadEntrepreneurs();
@@ -99,7 +101,36 @@ export default function AdminEditEntrepreneur() {
     }
   };
 
-  const loadR2Media = async () => {
+  const handleImpersonate = async (userId: string, userName: string) => {
+    try {
+      const token = await AsyncStorage.getItem('auth_token');
+      
+      // Save current admin token
+      setOriginalAdminToken(token);
+      await AsyncStorage.setItem('admin_original_token', token || '');
+      
+      // Call impersonate endpoint
+      const response = await axios.post(
+        `${API_URL}/api/admin/impersonate/${userId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Switch to impersonated user
+      await AsyncStorage.setItem('auth_token', response.data.token);
+      await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+      await AsyncStorage.setItem('is_impersonating', 'true');
+      await AsyncStorage.setItem('impersonated_name', userName);
+      
+      setIsImpersonating(true);
+      
+      // Navigate to profile editor
+      router.replace('/profile/edit-entrepreneur');
+    } catch (error: any) {
+      console.error('Error impersonating:', error);
+      alert('Error: ' + (error.response?.data?.detail || 'Failed to impersonate'));
+    }
+  };
     try {
       console.log('📥 Loading R2 media...');
       const token = await AsyncStorage.getItem('auth_token');
@@ -202,15 +233,39 @@ export default function AdminEditEntrepreneur() {
           <View style={styles.prioritySection}>
             <Text style={styles.priorityTitle}>⭐ Priority Profiles</Text>
             <TouchableOpacity style={styles.userCard} onPress={() => loadUserProfile('a7b57c11-e0ef-4ea7-bf43-a271879f6cc3')}>
-              <Text style={styles.userName}>Dboy Stackalini</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.userName}>Dboy Stackalini</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.impersonateButton}
+                onPress={() => handleImpersonate('a7b57c11-e0ef-4ea7-bf43-a271879f6cc3', 'Dboy Stackalini')}
+              >
+                <Text style={styles.impersonateButtonText}>Login as User</Text>
+              </TouchableOpacity>
               <Ionicons name="chevron-forward" size={20} color="#666" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.userCard} onPress={() => loadUserProfile('82b44d84-a9cc-4f09-b7ed-28a6daea548a')}>
-              <Text style={styles.userName}>The Lace Nerd</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.userName}>The Lace Nerd</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.impersonateButton}
+                onPress={() => handleImpersonate('82b44d84-a9cc-4f09-b7ed-28a6daea548a', 'The Lace Nerd')}
+              >
+                <Text style={styles.impersonateButtonText}>Login as User</Text>
+              </TouchableOpacity>
               <Ionicons name="chevron-forward" size={20} color="#666" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.userCard} onPress={() => loadUserProfile('d13c88af-f5e1-4f27-9dfc-6f3287583b13')}>
-              <Text style={styles.userName}>D.Petty</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.userName}>D.Petty</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.impersonateButton}
+                onPress={() => handleImpersonate('d13c88af-f5e1-4f27-9dfc-6f3287583b13', 'D.Petty')}
+              >
+                <Text style={styles.impersonateButtonText}>Login as User</Text>
+              </TouchableOpacity>
               <Ionicons name="chevron-forward" size={20} color="#666" />
             </TouchableOpacity>
           </View>
@@ -471,6 +526,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   userName: { fontSize: 16, fontWeight: '500' },
+  impersonateButton: {
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  impersonateButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   searchInput: {
     padding: 12,
     borderWidth: 1,
