@@ -51,7 +51,7 @@ export default {
       typedRoutes: true,
     },
     extra: {
-      EXPO_PUBLIC_BACKEND_URL: process.env.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com',
+      EXPO_PUBLIC_BACKEND_URL: process.env.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com',
     },
   },
 };
