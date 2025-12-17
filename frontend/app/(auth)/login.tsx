@@ -71,9 +71,19 @@ export default function Login() {
           username: user.username,
           type: user.user_type,
           tier: user.membership_tier,
-          profile_completed: user.profile_completed
+          profile_completed: user.profile_completed,
+          is_admin: user.is_admin,
+          is_approval_admin: user.is_approval_admin
         });
         
+        // PRIORITY 1: Approval Admin → Approval Dashboard
+        if (user.user_type === 'admin' || user.is_approval_admin) {
+          console.log('→ Approval admin detected, navigating to approval dashboard');
+          router.replace('/admin/approval-dashboard');
+          return;
+        }
+        
+        // PRIORITY 2: Paid tier users ALWAYS go to dashboard (skip onboarding)
         // Check if user has a paid membership tier
         const hasPaidTier = user.membership_tier && 
           user.membership_tier !== 'basic' && 
@@ -85,7 +95,6 @@ export default function Login() {
           hasPaidTier
         });
         
-        // PRIORITY: Paid tier users ALWAYS go to dashboard (skip onboarding)
         if (hasPaidTier) {
           console.log('→ Paid tier detected, navigating to dashboard');
           setTimeout(() => {
