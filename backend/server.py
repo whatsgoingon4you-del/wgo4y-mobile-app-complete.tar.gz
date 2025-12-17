@@ -1296,8 +1296,9 @@ async def get_events(
     status: Optional[str] = None,
     venue_id: Optional[str] = None
 ):
-    # Default: only show published events for public view
-    query = {}
+    # Default: only show published AND approved events for public view
+    query = {'approval_status': 'approved'}  # CRITICAL: Only approved content visible
+    
     if status:
         query['status'] = status
     else:
