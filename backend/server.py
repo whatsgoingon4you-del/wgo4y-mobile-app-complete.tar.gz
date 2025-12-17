@@ -1381,9 +1381,12 @@ async def get_my_events(user: Dict = Depends(get_current_user), status: Optional
 
 @api_router.get("/events/{event_id}")
 async def get_event(event_id: str):
-    event = await db.events.find_one({'_id': event_id})
+    event = await db.events.find_one({
+        '_id': event_id,
+        'approval_status': 'approved'
+    })
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=404, detail="Event not found or pending approval")
     
     # Calculate capacity info
     capacity = event.get('capacity', 100)
