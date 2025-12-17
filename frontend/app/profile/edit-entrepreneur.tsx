@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  Pressable,
   Image,
   Alert,
   KeyboardAvoidingView,
@@ -947,33 +948,15 @@ export default function EditEntrepreneurProfile() {
       >
         {/* Header */}
         <View style={styles.header}>
-          {Platform.OS === 'web' ? (
-            <button
-              onClick={handleBack}
-              style={{
-                padding: '8px',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              aria-label="Go back"
-            >
-              <Ionicons name="arrow-back" size={24} color="#333" />
-            </button>
-          ) : (
-            <TouchableOpacity 
-              onPress={handleBack} 
-              style={styles.backButton}
-              accessible={true}
-              accessibilityLabel="Go back"
-              accessibilityRole="button"
-            >
-              <Ionicons name="arrow-back" size={24} color="#333" />
-            </TouchableOpacity>
-          )}
+          <Pressable 
+            onPress={handleBack}
+            style={styles.backButton}
+            accessible={true}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <Ionicons name="arrow-back" size={24} color="#333" />
+          </Pressable>
           <Text style={styles.headerTitle}>Edit Profile</Text>
           <TouchableOpacity 
             onPress={handleSave} 
@@ -2121,6 +2104,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    cursor: 'pointer',
+    userSelect: 'none',
   },
   headerTitle: {
     fontSize: 18,
