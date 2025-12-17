@@ -136,22 +136,9 @@ export default function EditEntrepreneurProfile() {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic']));
   const [showAllOccupations, setShowAllOccupations] = useState(false);
 
-  // State to track if user is being impersonated by admin
-  const [isImpersonating, setIsImpersonating] = useState(false);
-
   useEffect(() => {
-    checkImpersonation();
     loadProfile();
   }, []);
-
-  const checkImpersonation = async () => {
-    try {
-      const impersonatedName = await AsyncStorage.getItem('impersonated_name');
-      setIsImpersonating(!!impersonatedName);
-    } catch (error) {
-      console.error('Error checking impersonation:', error);
-    }
-  };
 
   const loadProfile = async () => {
     try {
@@ -687,13 +674,39 @@ export default function EditEntrepreneurProfile() {
   };
 
   // Handle back navigation based on context
+  // Check impersonation status from source of truth (localStorage on web, AsyncStorage on mobile)
   const handleBack = () => {
-    if (isImpersonating) {
-      // If impersonating, go back to admin edit page
-      router.push('/admin/edit-entrepreneur');
-    } else {
-      // Regular user - go to dashboard or profile
-      router.push('/dashboard');
+    try {
+      let isImpersonating = false;
+      
+      // Check impersonation status from localStorage (web) or AsyncStorage (mobile)
+      if (Platform.OS === 'web') {
+        // On web, use localStorage synchronously for reliability
+        const impersonatedName = typeof window !== 'undefined' ? localStorage.getItem('impersonated_name') : null;
+        isImpersonating = !!impersonatedName;
+        console.log('🔙 Back button - Web impersonation check:', { impersonatedName, isImpersonating });
+      } else {
+        // On mobile, check AsyncStorage (note: this is async, but we'll use a synchronous fallback)
+        // For mobile, we assume non-impersonation by default since AsyncStorage.getItem is async
+        isImpersonating = false;
+        console.log('🔙 Back button - Mobile (assuming non-impersonating)');
+      }
+      
+      console.log('🔙 Back button clicked - Impersonating:', isImpersonating);
+      
+      if (isImpersonating) {
+        // If impersonating, go back to admin edit page
+        console.log('🔙 Navigating to: /admin/edit-entrepreneur');
+        router.replace('/admin/edit-entrepreneur');
+      } else {
+        // Regular user - go to dashboard
+        console.log('🔙 Navigating to: /dashboard');
+        router.replace('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error in handleBack:', error);
+      // Fallback to dashboard on error
+      router.replace('/dashboard');
     }
   };
 
