@@ -5391,3 +5391,449 @@ async def shutdown_db_client():
     client.close()
 
 
+
+
+# ============= MODERATION / APPROVAL SYSTEM =============
+
+class ApprovalAction(BaseModel):
+    action: str  # 'approve' or 'reject'
+    rejection_reason: Optional[str] = None
+
+class BulkApprovalAction(BaseModel):
+    content_type: str  # 'profile_photo', 'gallery_image', 'profile_video', 'event', etc.
+    content_ids: List[str]
+    action: str  # 'approve' or 'reject'
+    rejection_reason: Optional[str] = None
+
+@api_router.get("/admin/approval/queue")
+async def get_approval_queue(
+    content_type: Optional[str] = None,
+    status: str = 'pending',
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get moderation queue for approval admin
+    Content types: profile_photo, gallery_image, profile_video, event, event_image, raffle, coupon, job
+    Status: pending, approved, rejected
+    """
+    try:
+        user = await get_current_user(credentials)
+        
+        # Check if user is approval admin
+        if not user.get('is_admin') and not user.get('is_approval_admin'):
+            raise HTTPException(status_code=403, detail="Not authorized for moderation")
+        
+        queue_items = []
+        
+        # Define content types to check
+        content_types_map = {
+            'profile_photo': ('users', 'profile_photo'),
+            'gallery_image': ('users', 'portfolio_photos'),
+            'profile_video': ('users', 'portfolio_videos'),
+            'event': ('events', None),
+            'event_image': ('events', 'flyer_url'),
+            'raffle': ('raffles', None),
+            'coupon': ('coupons', None),
+            'job': ('job_postings', None),
+        }
+        
+        # If specific content_type requested, filter to that
+        if content_type:
+            if content_type not in content_types_map:
+                raise HTTPException(status_code=400, detail=f"Invalid content_type: {content_type}")
+            check_types = {content_type: content_types_map[content_type]}
+        else:
+            check_types = content_types_map
+        
+        # Query each content type
+        for ctype, (collection_name, field_name) in check_types.items():
+            collection = db[collection_name]
+            
+            if ctype in ['profile_photo', 'gallery_image', 'profile_video']:
+                # User profile content - check nested fields
+                query = {'approval_status': status}
+                
+                if ctype == 'profile_photo':
+                    query['profile_photo'] = {'$exists': True, '$ne': None}
+                    query['profile_photo_approval_status'] = status
+                elif ctype == 'gallery_image':
+                    query['portfolio_photos'] = {'$exists': True, '$ne': []}
+                elif ctype == 'profile_video':
+                    query['portfolio_videos'] = {'$exists': True, '$ne': []}
+                
+                users = await collection.find(query, {'_id': 0}).to_list(1000)
+                
+                for user in users:
+                    if ctype == 'profile_photo' and user.get('profile_photo'):
+                        queue_items.append({
+                            'content_type': 'profile_photo',
+                            'content_id': user['id'],
+                            'user_id': user['id'],
+                            'user_name': user.get('full_name', 'Unknown'),
+                            'content_url': user['profile_photo'],
+                            'status': user.get('profile_photo_approval_status', 'pending'),
+                            'submitted_at': user.get('updated_at', user.get('created_at')),
+                            'metadata': user.get('profile_photo_approval_metadata', {})
+                        })
+                    
+                    elif ctype == 'gallery_image' and user.get('portfolio_photos'):
+                        for idx, photo_url in enumerate(user['portfolio_photos']):
+                            photo_status = user.get('portfolio_photos_approval_status', {}).get(str(idx), 'pending')
+                            if photo_status == status:
+                                queue_items.append({
+                                    'content_type': 'gallery_image',
+                                    'content_id': f"{user['id']}_gallery_{idx}",
+                                    'user_id': user['id'],
+                                    'user_name': user.get('full_name', 'Unknown'),
+                                    'content_url': photo_url,
+                                    'status': photo_status,
+                                    'submitted_at': user.get('updated_at', user.get('created_at')),
+                                    'gallery_index': idx
+                                })
+                    
+                    elif ctype == 'profile_video' and user.get('portfolio_videos'):
+                        for idx, video in enumerate(user['portfolio_videos']):
+                            video_status = user.get('portfolio_videos_approval_status', {}).get(str(idx), 'pending')
+                            if video_status == status:
+                                queue_items.append({
+                                    'content_type': 'profile_video',
+                                    'content_id': f"{user['id']}_video_{idx}",
+                                    'user_id': user['id'],
+                                    'user_name': user.get('full_name', 'Unknown'),
+                                    'content_data': video,
+                                    'status': video_status,
+                                    'submitted_at': user.get('updated_at', user.get('created_at')),
+                                    'video_index': idx
+                                })
+            
+            else:
+                # Direct content collections (events, raffles, coupons, jobs)
+                query = {'approval_status': status}
+                docs = await collection.find(query, {'_id': 0}).to_list(1000)
+                
+                for doc in docs:
+                    item = {
+                        'content_type': ctype,
+                        'content_id': doc.get('id', doc.get('event_id', doc.get('raffle_id', doc.get('coupon_id', doc.get('job_id'))))),
+                        'user_id': doc.get('organizer_id', doc.get('business_id', doc.get('user_id'))),
+                        'status': doc.get('approval_status', 'pending'),
+                        'submitted_at': doc.get('created_at'),
+                        'metadata': doc.get('approval_metadata', {}),
+                        'content_data': doc
+                    }
+                    queue_items.append(item)
+        
+        # Sort by submitted_at (most recent first)
+        queue_items.sort(key=lambda x: x.get('submitted_at', datetime.min), reverse=True)
+        
+        return {
+            'total': len(queue_items),
+            'status': status,
+            'content_type': content_type or 'all',
+            'items': queue_items
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error getting approval queue: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/approval/{content_type}/{content_id}/action")
+async def moderate_content(
+    content_type: str,
+    content_id: str,
+    action: ApprovalAction,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Approve or reject content
+    """
+    try:
+        user = await get_current_user(credentials)
+        
+        # Check if user is approval admin
+        if not user.get('is_admin') and not user.get('is_approval_admin'):
+            raise HTTPException(status_code=403, detail="Not authorized for moderation")
+        
+        if action.action not in ['approve', 'reject']:
+            raise HTTPException(status_code=400, detail="Action must be 'approve' or 'reject'")
+        
+        new_status = 'approved' if action.action == 'approve' else 'rejected'
+        
+        # Build approval metadata
+        approval_metadata = {
+            'moderated_at': datetime.now(timezone.utc),
+            'moderated_by': user['id'],
+            'moderator_name': user.get('full_name', user.get('username')),
+            'action': action.action
+        }
+        
+        if action.rejection_reason:
+            approval_metadata['rejection_reason'] = action.rejection_reason
+        
+        # Update content based on type
+        if content_type in ['profile_photo', 'gallery_image', 'profile_video']:
+            # User profile content
+            if '_' in content_id:
+                user_id = content_id.split('_')[0]
+            else:
+                user_id = content_id
+            
+            update_query = {}
+            
+            if content_type == 'profile_photo':
+                update_query = {
+                    'profile_photo_approval_status': new_status,
+                    'profile_photo_approval_metadata': approval_metadata
+                }
+            elif content_type == 'gallery_image':
+                idx = content_id.split('_')[-1]
+                update_query = {
+                    f'portfolio_photos_approval_status.{idx}': new_status,
+                    f'portfolio_photos_approval_metadata.{idx}': approval_metadata
+                }
+            elif content_type == 'profile_video':
+                idx = content_id.split('_')[-1]
+                update_query = {
+                    f'portfolio_videos_approval_status.{idx}': new_status,
+                    f'portfolio_videos_approval_metadata.{idx}': approval_metadata
+                }
+            
+            result = await db.users.update_one(
+                {'id': user_id},
+                {'$set': update_query}
+            )
+            
+            if result.matched_count == 0:
+                raise HTTPException(status_code=404, detail="Content not found")
+            
+            # Create in-app notification if rejected
+            if new_status == 'rejected':
+                notification = {
+                    'id': f"notif_{content_id}_{datetime.now().timestamp()}",
+                    'user_id': user_id,
+                    'type': 'content_rejected',
+                    'content_type': content_type,
+                    'content_id': content_id,
+                    'title': f"{content_type.replace('_', ' ').title()} Rejected",
+                    'message': f"Your {content_type.replace('_', ' ')} was rejected. {action.rejection_reason or ''}",
+                    'rejection_reason': action.rejection_reason,
+                    'created_at': datetime.now(timezone.utc),
+                    'read': False
+                }
+                await db.notifications.insert_one(notification)
+        
+        else:
+            # Direct content (events, raffles, coupons, jobs)
+            collection_map = {
+                'event': 'events',
+                'event_image': 'events',
+                'raffle': 'raffles',
+                'coupon': 'coupons',
+                'job': 'job_postings'
+            }
+            
+            collection = db[collection_map[content_type]]
+            
+            result = await collection.update_one(
+                {'id': content_id} if content_type != 'event' else {'event_id': content_id},
+                {
+                    '$set': {
+                        'approval_status': new_status,
+                        'approval_metadata': approval_metadata
+                    }
+                }
+            )
+            
+            if result.matched_count == 0:
+                raise HTTPException(status_code=404, detail="Content not found")
+            
+            # Get user_id for notification
+            doc = await collection.find_one(
+                {'id': content_id} if content_type != 'event' else {'event_id': content_id},
+                {'_id': 0}
+            )
+            
+            user_id = doc.get('organizer_id', doc.get('business_id', doc.get('user_id')))
+            
+            # Create in-app notification if rejected
+            if new_status == 'rejected' and user_id:
+                notification = {
+                    'id': f"notif_{content_id}_{datetime.now().timestamp()}",
+                    'user_id': user_id,
+                    'type': 'content_rejected',
+                    'content_type': content_type,
+                    'content_id': content_id,
+                    'title': f"{content_type.replace('_', ' ').title()} Rejected",
+                    'message': f"Your {content_type.replace('_', ' ')} was rejected. {action.rejection_reason or ''}",
+                    'rejection_reason': action.rejection_reason,
+                    'created_at': datetime.now(timezone.utc),
+                    'read': False
+                }
+                await db.notifications.insert_one(notification)
+        
+        return {
+            'success': True,
+            'content_type': content_type,
+            'content_id': content_id,
+            'new_status': new_status,
+            'action': action.action
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error moderating content: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/approval/bulk-action")
+async def bulk_moderate_content(
+    bulk_action: BulkApprovalAction,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Bulk approve or reject multiple items
+    """
+    try:
+        user = await get_current_user(credentials)
+        
+        # Check if user is approval admin
+        if not user.get('is_admin') and not user.get('is_approval_admin'):
+            raise HTTPException(status_code=403, detail="Not authorized for moderation")
+        
+        results = []
+        
+        for content_id in bulk_action.content_ids:
+            try:
+                action = ApprovalAction(
+                    action=bulk_action.action,
+                    rejection_reason=bulk_action.rejection_reason
+                )
+                
+                result = await moderate_content(
+                    content_type=bulk_action.content_type,
+                    content_id=content_id,
+                    action=action,
+                    credentials=credentials
+                )
+                
+                results.append({
+                    'content_id': content_id,
+                    'success': True,
+                    'status': result['new_status']
+                })
+            except Exception as e:
+                results.append({
+                    'content_id': content_id,
+                    'success': False,
+                    'error': str(e)
+                })
+        
+        success_count = sum(1 for r in results if r['success'])
+        
+        return {
+            'total_processed': len(results),
+            'successful': success_count,
+            'failed': len(results) - success_count,
+            'results': results
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in bulk moderation: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/approval/stats")
+async def get_approval_stats(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get approval queue statistics
+    """
+    try:
+        user = await get_current_user(credentials)
+        
+        if not user.get('is_admin') and not user.get('is_approval_admin'):
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        stats = {
+            'pending': {},
+            'approved': {},
+            'rejected': {},
+            'total_pending': 0
+        }
+        
+        content_types = ['profile_photo', 'gallery_image', 'profile_video', 'event', 'raffle', 'coupon', 'job']
+        
+        for content_type in content_types:
+            # Get counts for each status
+            for status in ['pending', 'approved', 'rejected']:
+                queue = await get_approval_queue(content_type=content_type, status=status, credentials=credentials)
+                count = queue['total']
+                stats[status][content_type] = count
+                
+                if status == 'pending':
+                    stats['total_pending'] += count
+        
+        return stats
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error getting approval stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/notifications")
+async def get_user_notifications(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get notifications for current user"""
+    try:
+        user = await get_current_user(credentials)
+        
+        notifications = await db.notifications.find(
+            {'user_id': user['id']},
+            {'_id': 0}
+        ).sort('created_at', -1).limit(50).to_list(50)
+        
+        unread_count = await db.notifications.count_documents({
+            'user_id': user['id'],
+            'read': False
+        })
+        
+        return {
+            'notifications': notifications,
+            'unread_count': unread_count
+        }
+        
+    except Exception as e:
+        print(f"❌ Error getting notifications: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/notifications/{notification_id}/mark-read")
+async def mark_notification_read(
+    notification_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Mark notification as read"""
+    try:
+        user = await get_current_user(credentials)
+        
+        result = await db.notifications.update_one(
+            {'id': notification_id, 'user_id': user['id']},
+            {'$set': {'read': True}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        
+        return {'success': True}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error marking notification as read: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
