@@ -676,6 +676,8 @@ export default function EditEntrepreneurProfile() {
   // Handle back navigation based on context
   // Check impersonation status from source of truth (localStorage on web, AsyncStorage on mobile)
   const handleBack = () => {
+    console.log('🔙 handleBack function called');
+    
     try {
       let isImpersonating = false;
       
@@ -693,6 +695,7 @@ export default function EditEntrepreneurProfile() {
       }
       
       console.log('🔙 Back button clicked - Impersonating:', isImpersonating);
+      console.log('🔙 Current URL:', typeof window !== 'undefined' ? window.location.href : 'N/A');
       
       if (isImpersonating) {
         // If impersonating, go back to admin edit page
@@ -703,8 +706,14 @@ export default function EditEntrepreneurProfile() {
         console.log('🔙 Navigating to: /dashboard');
         router.replace('/dashboard');
       }
+      
+      // Log after navigation attempt
+      setTimeout(() => {
+        console.log('🔙 Navigation complete. New URL:', typeof window !== 'undefined' ? window.location.href : 'N/A');
+      }, 1000);
+      
     } catch (error) {
-      console.error('Error in handleBack:', error);
+      console.error('❌ Error in handleBack:', error);
       // Fallback to dashboard on error
       router.replace('/dashboard');
     }
@@ -938,7 +947,13 @@ export default function EditEntrepreneurProfile() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+          <TouchableOpacity 
+            onPress={handleBack} 
+            style={styles.backButton}
+            accessible={true}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit Profile</Text>
