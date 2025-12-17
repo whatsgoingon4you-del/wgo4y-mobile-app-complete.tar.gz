@@ -109,7 +109,7 @@ export default function PaymentScreen() {
         originUrl = window.location.origin;
       } else {
         // For mobile, use the backend URL without /api suffix
-        const baseUrl = API_URL?.split('/api')[0] || 'http://localhost:3000';
+        const baseUrl = API_URL?.split('/api')[0] || API_URL;
         originUrl = baseUrl;
       }
 
