@@ -32,8 +32,7 @@ import { PhoneInput } from '../../components/PhoneInput';
 import { isValidPhoneNumber } from '../../utils/phoneFormatter';
 import { parseVideoUrl, isValidVideoUrl } from '../../utils/videoUtils';
 import { parseMusicUrl, isValidMusicUrl, getMusicPlatformIcon, getMusicPlatformColor, getMusicPlatformName } from '../../utils/musicUtils';
-
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com';
+import { API_URL } from '../../utils/api';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {

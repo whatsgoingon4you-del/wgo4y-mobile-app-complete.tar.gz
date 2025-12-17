@@ -1,14 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import Constants from 'expo-constants';
-
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com';
-
-// Debug: Log the API URL being used
-console.log('🔗 API_URL configured as:', API_URL);
-console.log('🔗 Constants.expoConfig?.extra:', Constants.expoConfig?.extra);
-console.log('🔗 process.env.EXPO_PUBLIC_BACKEND_URL:', process.env.EXPO_PUBLIC_BACKEND_URL);
+import { API_URL } from '../utils/api';
 
 interface User {
   id: string;
