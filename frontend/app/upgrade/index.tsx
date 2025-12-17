@@ -243,7 +243,7 @@ export default function UpgradeMembershipScreen() {
       if (Platform.OS === 'web') {
         originUrl = window.location.origin;
       } else {
-        const baseUrl = API_URL?.split('/api')[0] || 'http://localhost:3000';
+        const baseUrl = API_URL?.split('/api')[0] || API_URL;
         originUrl = baseUrl;
       }
 
