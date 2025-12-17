@@ -22,14 +22,14 @@ import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import Constants from 'expo-constants';
 import { GROUPED_VENUE_CATEGORIES } from '../onboarding/business/groupedVenueCategories';
 import { COMPREHENSIVE_AMENITIES } from '../onboarding/business/comprehensiveAmenities';
 import { GROUPED_ENTERTAINMENT_CATEGORIES } from '../onboarding/business/groupedEntertainmentCategories';
 import { PhoneInput } from '../../components/PhoneInput';
 import { parseVideoUrl, isValidVideoUrl } from '../../utils/videoUtils';
+import { API_URL } from '../../utils/api';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com';
+
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {

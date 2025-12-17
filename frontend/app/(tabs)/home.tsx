@@ -18,14 +18,14 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
-import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../contexts/AuthContext';
 import ProfileCompletionModal from '../../components/ProfileCompletionModal';
+import { API_URL } from '../../utils/api';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.7;
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com';
+
 
 interface Category {
   id: string;

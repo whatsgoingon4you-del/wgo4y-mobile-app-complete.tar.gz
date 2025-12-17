@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import Constants from 'expo-constants';
+import { API_URL } from '../../utils/api';
 
 interface UserTypeOption {
   id: string;
@@ -203,7 +203,7 @@ export default function UserTypeSelectionScreen() {
       try {
         const token = await AsyncStorage.getItem('auth_token');
         if (token) {
-          const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com';
+          
           await axios.put(
             `${API_URL}/api/profile`,
             { user_type: selectedType },

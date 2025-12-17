@@ -15,9 +15,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../../contexts/AuthContext';
 import { ORDERED_OCCUPATIONS } from './broadOccupations';
 import axios from 'axios';
-import Constants from 'expo-constants';
+import { API_URL } from '../../../utils/api';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com';
+
 
 export default function EntrepreneurStep2() {
   const router = useRouter();

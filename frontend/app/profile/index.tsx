@@ -5,15 +5,15 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENTREPRENEUR_CATEGORIES } from '../onboarding/entrepreneur/step0';
 import { getCategoryDisplayNames } from '../onboarding/entrepreneur/categoryMapping';
 import { formatServicePrice } from '../../utils/priceFormatter';
 import { WebView } from 'react-native-webview';
 import { parseVideoUrl } from '../../utils/videoUtils';
+import { API_URL } from '../../utils/api';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com';
+
 
 interface ProfileData {
   id: string;

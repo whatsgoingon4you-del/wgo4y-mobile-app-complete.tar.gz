@@ -19,13 +19,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import Constants from 'expo-constants';
 import { GROUPED_VENUE_CATEGORIES } from '../onboarding/business/groupedVenueCategories';
 import { GROUPED_ENTERTAINMENT_CATEGORIES } from '../onboarding/business/groupedEntertainmentCategories';
 import { GROUPED_SERVICE_CATEGORIES } from '../onboarding/general/groupedServiceCategories';
 import { getVenuesFromEntertainment, getServicesFromEntertainment } from '../../utils/preferenceMapping';
+import { API_URL } from '../../utils/api';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com';
+
 
 export default function EditProfile() {
   const router = useRouter();
