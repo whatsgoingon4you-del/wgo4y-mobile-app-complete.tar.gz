@@ -2081,8 +2081,11 @@ async def get_coupons(
     discount_type: Optional[str] = None,  # amount_off, percent_off, etc.
     user: Dict = Depends(get_current_user)
 ):
-    """Get list of active coupons with filters"""
-    query = {'status': 'active'}  # Only show active coupons
+    """Get list of active approved coupons (public endpoint)"""
+    query = {
+        'status': 'active',
+        'approval_status': 'approved'  # CRITICAL: Only approved coupons
+    }
     
     # Check if coupon is still valid (not expired)
     query['valid_until'] = {'$gte': datetime.utcnow()}
@@ -2350,8 +2353,8 @@ async def get_raffles(
     upcoming_only: bool = False,
     user: Dict = Depends(get_current_user)
 ):
-    """Get list of raffles"""
-    query = {}
+    """Get list of approved raffles (public endpoint)"""
+    query = {'approval_status': 'approved'}  # CRITICAL: Only approved raffles
     
     if status:
         query['status'] = status
@@ -3421,8 +3424,8 @@ async def get_jobs(
     status: Optional[str] = None,
     user: Dict = Depends(get_current_user)
 ):
-    """Get job postings - Workers see all open jobs, Businesses see their own jobs"""
-    query = {}
+    """Get approved job postings (public endpoint)"""
+    query = {'approval_status': 'approved'}  # CRITICAL: Only approved jobs
     
     # If user is a worker (has worker profile), show all open jobs
     worker_profile = await db.worker_profiles.find_one({
