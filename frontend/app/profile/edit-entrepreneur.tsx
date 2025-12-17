@@ -136,9 +136,22 @@ export default function EditEntrepreneurProfile() {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic']));
   const [showAllOccupations, setShowAllOccupations] = useState(false);
 
+  // State to track if user is being impersonated by admin
+  const [isImpersonating, setIsImpersonating] = useState(false);
+
   useEffect(() => {
+    checkImpersonation();
     loadProfile();
   }, []);
+
+  const checkImpersonation = async () => {
+    try {
+      const impersonatedName = await AsyncStorage.getItem('impersonated_name');
+      setIsImpersonating(!!impersonatedName);
+    } catch (error) {
+      console.error('Error checking impersonation:', error);
+    }
+  };
 
   const loadProfile = async () => {
     try {
