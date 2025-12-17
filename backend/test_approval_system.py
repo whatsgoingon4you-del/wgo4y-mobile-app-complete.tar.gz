@@ -9,7 +9,7 @@ import json
 from datetime import datetime, timezone
 from uuid import uuid4
 
-BASE_URL = "https://wgo4y-repair.preview.emergentagent.com/api"
+BASE_URL = "http://localhost:8001/api"
 
 # Color codes for output
 GREEN = '\033[92m'
