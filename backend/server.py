@@ -5159,11 +5159,20 @@ async def moderate_content(
             'job': 'job_postings'
         }
         
+        # ID field mapping (different collections use different ID fields)
+        id_field_map = {
+            'event': 'event_id',
+            'raffle': 'raffle_id',
+            'coupon': 'coupon_id',
+            'job': 'id'
+        }
+        
         if content_type in collection_map:
             collection = db[collection_map[content_type]]
+            id_field = id_field_map[content_type]
             
             result = await collection.update_one(
-                {'id': content_id},
+                {id_field: content_id},
                 {
                     '$set': {
                         'approval_status': new_status,
@@ -5173,9 +5182,9 @@ async def moderate_content(
             )
             
             if result.matched_count == 0:
-                raise HTTPException(status_code=404, detail="Content not found")
+                raise HTTPException(status_code=404, detail=f"Content not found: {content_type} {content_id}")
             
-            doc = await collection.find_one({'id': content_id}, {'_id': 0})
+            doc = await collection.find_one({id_field: content_id}, {'_id': 0})
             user_id = doc.get('organizer_id', doc.get('business_id', doc.get('user_id')))
             
             if new_status == 'rejected' and user_id:
