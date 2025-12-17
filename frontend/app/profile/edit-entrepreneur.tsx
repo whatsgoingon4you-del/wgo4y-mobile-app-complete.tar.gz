@@ -686,6 +686,17 @@ export default function EditEntrepreneurProfile() {
     }
   };
 
+  // Handle back navigation based on context
+  const handleBack = () => {
+    if (isImpersonating) {
+      // If impersonating, go back to admin edit page
+      router.push('/admin/edit-entrepreneur');
+    } else {
+      // Regular user - go to dashboard or profile
+      router.push('/dashboard');
+    }
+  };
+
   const handleSave = async () => {
     // Validation
     if (!displayName.trim()) {
@@ -791,12 +802,12 @@ export default function EditEntrepreneurProfile() {
 
       console.log('✅ Profile updated successfully');
       if (Platform.OS === 'web') {
-        if (confirm('Success! Your profile has been updated successfully. Go back to profile?')) {
-          router.back();
+        if (confirm('Success! Your profile has been updated successfully. Go back?')) {
+          handleBack();
         }
       } else {
         Alert.alert('Success! 🎉', 'Your profile has been updated successfully', [
-          { text: 'OK', onPress: () => router.back() }
+          { text: 'OK', onPress: handleBack }
         ]);
       }
     } catch (error: any) {
@@ -914,7 +925,7 @@ export default function EditEntrepreneurProfile() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit Profile</Text>
