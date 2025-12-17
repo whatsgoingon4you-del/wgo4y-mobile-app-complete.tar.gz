@@ -5701,7 +5701,3 @@ async def startup_populate_database():
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
-
-
-        raise HTTPException(status_code=500, detail=str(e))
-
