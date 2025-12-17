@@ -947,15 +947,33 @@ export default function EditEntrepreneurProfile() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
-            onPress={handleBack} 
-            style={styles.backButton}
-            accessible={true}
-            accessibilityLabel="Go back"
-            accessibilityRole="button"
-          >
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
+          {Platform.OS === 'web' ? (
+            <button
+              onClick={handleBack}
+              style={{
+                padding: '8px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              aria-label="Go back"
+            >
+              <Ionicons name="arrow-back" size={24} color="#333" />
+            </button>
+          ) : (
+            <TouchableOpacity 
+              onPress={handleBack} 
+              style={styles.backButton}
+              accessible={true}
+              accessibilityLabel="Go back"
+              accessibilityRole="button"
+            >
+              <Ionicons name="arrow-back" size={24} color="#333" />
+            </TouchableOpacity>
+          )}
           <Text style={styles.headerTitle}>Edit Profile</Text>
           <TouchableOpacity 
             onPress={handleSave} 
