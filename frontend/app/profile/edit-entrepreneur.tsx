@@ -1050,6 +1050,34 @@ export default function EditEntrepreneurProfile() {
                       setBio(newValue);
                     }
                   }}
+                  onPaste={(e) => {
+                    // Explicitly handle paste events
+                    const pastedText = e.clipboardData?.getData('text') || '';
+                    const currentValue = bio;
+                    const selectionStart = e.target.selectionStart || 0;
+                    const selectionEnd = e.target.selectionEnd || 0;
+                    
+                    // Calculate new value with paste
+                    const newValue = 
+                      currentValue.substring(0, selectionStart) +
+                      pastedText +
+                      currentValue.substring(selectionEnd);
+                    
+                    if (newValue.length <= 300) {
+                      e.preventDefault();
+                      setBio(newValue);
+                      // Set cursor position after paste
+                      setTimeout(() => {
+                        const newPosition = selectionStart + pastedText.length;
+                        e.target.setSelectionRange(newPosition, newPosition);
+                      }, 0);
+                    } else {
+                      // If paste would exceed limit, truncate
+                      e.preventDefault();
+                      const truncated = newValue.substring(0, 300);
+                      setBio(truncated);
+                    }
+                  }}
                   placeholder="Tell us about yourself and your services..."
                   rows={4}
                   maxLength={300}
