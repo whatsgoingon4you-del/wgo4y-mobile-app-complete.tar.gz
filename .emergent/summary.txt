@@ -1,191 +1,283 @@
-<analysis>**original_problem_statement:** The initial request was to fix a chat routing issue, which was a misunderstanding. The preview URL was showing the user's correct, existing application (WGO4Y), but the agent's workspace contained an unrelated basic template. After a lengthy process of discovery, the agent gained access to the correct WGO4Y codebase from the user's private GitHub repository.
+<analysis>
+📊 SESSION WRAP-UP: Core Flows Working (Preview Testing Ready)
 
-The primary goal now is to resume development on the real WGO4Y platform, an events, venues, and job board application. The immediate tasks are to fix the web preview deployment, complete the Job Board MVP backend, and address known bugs in the messaging system.
+Status: The platform is ready for broader testing in the preview environment; it is not ready for production until the MUST-FIX items are resolved and verified.
 
-**PRODUCT REQUIREMENTS:**
--   **Core Goal:** Continue building the WGO4Y platform, focusing on completing the Job Board MVP.
--   **Features to Complete:**
-    -   **Job Board MVP:** Post jobs, browse/search jobs, apply with cover letter (with character validation), manage applicants on a My Jobs page, implement tier-based application limits (Basic, Silver, Gold).
--   **Bugs to Fix:**
-    -   Address known bugs in the messaging system.
-    -   Resolve the inability to view the application via the preview URL.
--   **Integrations:**
-    -   Use Stripe test API keys (to be provided by the user) for the raffle system when that phase begins.
+Preview URL: https://test-ready-preview.preview.emergentagent.com
 
-**User's preferred language**: English
+Admin workflow: Login as Club Euphoria (admin) → /admin/edit-entrepreneur → click “Login as User” to impersonate and edit profiles.
 
-**what currently exists?**
-The agent has successfully cloned the user's actual WGO4Y application source code from a private GitHub repository into the  directory. This is a full-stack application with a FastAPI backend and an Expo (React Native) frontend.
-
--   The backend service has been configured with a  file and is running successfully.
--   The frontend dependencies have been installed, and a  file has been created.
--   The agent has attempted to run the Expo frontend in web mode, but it is currently not accessible via the preview URL due to deployment and/or dependency issues.
--   The agent has started work on the Job Board backend by adding a missing API endpoint to fetch job applicants.
-
-**Last working item**:
--   Last item agent was working: The agent was completing the backend for the Job Board MVP. Specifically, the agent identified and added the missing  endpoint to  to allow businesses to view who has applied for a job.
--   Status: IN PROGRESS
--   Agent Testing Done: N
--   Which testing method agent to use? backend testing agent
--   User Testing Done: N
-
-**All Pending/In progress Issue list**:
--   **Issue 1:** Expo frontend is not accessible on the preview URL. (P0)
--   **Issue 2:** Fix known Messaging System bugs. (P2)
-
-Issues Detail:
--   **Issue 1:** Expo frontend is not accessible on the preview URL.
-    -   **Attempted fixes:** The agent correctly identified that the Expo app needs to run in web mode. They updated the supervisor command to yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. (which runs ). However, the application is still not being served correctly on port 3000. An attempt to build a static export with  also failed. The frontend logs show several dependency version mismatches (e.g., ), which are the likely root cause of the web build failure.
-    -   **Next debug checklist:**
-        1.  Examine  for the dependency mismatch warnings.
-        2.  Run  to automatically align package versions.
-        3.  If that fails, manually update the versions in  to the recommended versions and run yarn install v1.22.22
-[1/4] Resolving packages...
-[2/4] Fetching packages...
-[3/4] Linking dependencies...
-[4/4] Building fresh packages...
-success Saved lockfile.
-Done in 0.03s..
-        4.  Restart the  service using frontend: ERROR (not running)
-frontend: started.
-        5.  Monitor the logs to confirm the web server compiles and starts listening on port 3000.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a critical blocker. The user cannot test or verify any work until the web preview is functional.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Frontend
-    -   **Blocked on other issue:** None
-
--   **Issue 2:** Fix known Messaging System bugs.
-    -   **Attempted fixes:** None.
-    -   **Next debug checklist:**
-        1.  Review  and the frontend code (search for message, chat) to understand the current implementation.
-        2.  Ask the user for specific steps to reproduce the bugs.
-        3.  Replicate the issues and implement fixes in both the backend and frontend as needed.
-    -   **Why fix this issue and what will be achieved with this?** This is a direct user request to improve the stability of an existing core feature.
-    -   **Status:** NOT STARTED
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Both
-    -   **Blocked on other issue:** Issue 1 (The frontend part of the fix cannot be tested without a working preview).
-
-**In progress Task List**:
--   **Task 1:** Complete Job Board Backend APIs. (P1)
-
-Task Detail:
--   **Task 1:** Complete Job Board Backend APIs.
-    -   **Where to resume:** The agent has added the  endpoint in . The next steps are to thoroughly test this new endpoint and then review the full Job Board MVP requirements to ensure all other necessary logic, such as tier-based application limits, is implemented and tested via .
-    -   **What will be achieved with this?** The backend will be fully prepared for the Job Board feature, fulfilling the user's primary development request.
-    -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Backend
-    -   **Blocked on something:** None.
-
-**Upcoming and Future Tasks**
-
-Upcoming Tasks:
--   (P0) **Fix Expo web deployment:** Make the frontend accessible via the preview URL.
--   (P2) **Fix Messaging System bugs:** Investigate and resolve issues in the messaging feature.
-
-Future Tasks:
--   Implement a basic admin dashboard/protected route.
--   Implement a My Applications page for entrepreneurs.
--   Implement hard role filtering for job applications.
--   Begin work on the 4 U Travel feature.
-
-**Completed work in this session**
-- **Codebase Synchronization:**
-  - Cloned the user's correct WGO4Y private repository into the  workspace, replacing the incorrect template code.
-- **Environment Setup:**
-  - Installed all backend () and frontend () dependencies for the real application.
-  - Created and configured  files for both the backend and frontend services.
-- **Backend Development:**
-  - Successfully started the FastAPI backend service.
-  - Added the  endpoint to  to support the Job Board feature.
-
-**Earlier issues found/mentioned but not fixed**
--   **Issue 1:** Messaging System Bugs
-    -   **Debug checklist:** See Pending/In progress Issue list.
-    -   **Why to solve this issue and what will be achieved with this?** To stabilize a core feature as requested by the user.
-    -   **Should Test frontend/backend/both after fix:** Both
-    -   **Is recurring issue?** N
-
-**Known issue recurrence from previous fork**
--   Issue recurrence in previous fork: N/A
--   Recurrence count: N/A
--   Status: N/A
-
-**Code Architecture**
+Important note: User IDs are for internal debugging only and should not be displayed in the UI.
 
 
-**Key Technical Concepts**
--   **Backend:** FastAPI, MongoDB (), JWT Authentication.
--   **Frontend:** Expo (React Native), Expo Router.
--   **Infrastructure:** Services are managed by .
 
-**key DB schema**
--   **users:** , , , , , , , 
--   **jobs:** , , , 
--   **job_applications:** , , 
--   **events:** , Tue Dec  9 15:37:55 UTC 2025, , 
--   **venues:** , , 
+✅ WORKING (Verified)
 
-**changes in tech stack**
--   The codebase was switched from a standard React (CRA) app to an **Expo (React Native)** application. This is a critical distinction, as it's a mobile-first framework.
+Authentication & Access
 
-**All files of reference**
--   : The single, large file containing all backend API logic.
--   : Defines frontend dependencies and scripts. The  script is key for deployment.
--   : Defines how the  and  services are run. It was modified to use yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. for the frontend.
--   : The most important log file for debugging the current frontend deployment failure.
 
-**Areas that need refactoring**:
--   The backend logic is contained within a single monolithic file,  (>3000 lines). This should be broken down into separate modules/routers by feature for better maintainability.
 
-**key api endpoints**
--   , 
--    (for images)
--   , 
--   
--   , , 
 
-**Critical Info for New Agent**
--   **The codebase was switched mid-session.** The first ~450 messages of the chat history are about building a temporary app from scratch and are **not relevant** to the current codebase. The real work began after cloning the user's private GitHub repository.
--   **The frontend is an Expo (React Native) app,** not a standard web React app. Development and debugging must account for this.
--   **The immediate blocker is the frontend web deployment.** The user cannot see any changes until the preview URL is working. The logs strongly suggest dependency version mismatches are the cause.
--   The user's priority, after fixing the web preview, is to **complete the Job Board backend APIs**.
 
-**documents created in this job**
--   
--   
+Login works (multiple username formats)
 
-**Last 10 User Messages and any pending user messages**
-1.  **User:** Asks for the web URL.
-2.  **Agent:** Provides URL, notes potential deployment issues.
-3.  **User:** Reports they cannot access the preview. **(PENDING ISSUE)**
-4.  **Agent:** Investigates and finds Expo web server is not running correctly.
-5.  **Agent:** Tries multiple fixes (changing supervisor command, attempting a static build) which fail.
-6.  **Agent:** Identifies dependency mismatches in logs as a likely cause.
-7.  **Agent:** Proposes pausing the frontend fix and focusing on the backend as a next step.
-8.  **User:** Agrees, asking to complete the Job Board backend first and fix messaging bugs.
-9.  **Agent:** Begins work on the Job Board backend, finds and adds the missing endpoint to get applicants.
-10. **Agent:** Confirms the new code was inserted and states they will now restart and test.
 
-**Project Health Check:**
--   **Broken:** The frontend web preview is non-functional, preventing any user testing or validation.
--   **Mocked:** N/A
 
-**3rd Party Integrations**
--   **Stripe:** Planned for the raffle system. User will provide test keys when needed.
--   **GitHub:** Used once to clone the repository via an SSH deploy key.
+Club Euphoria has Gold tier + Admin access
 
-**Testing status**
--   Testing agent used after significant changes: NO
--   Troubleshoot agent used after agent stuck in loop: YES
--   Test files created: None by the agent. The repo contains existing tests.
--   Known regressions: The web preview is a complete regression, as it's currently inaccessible.
 
-**Credentials to test flow:**
-None provided. The agent must create new test users via the signup flow.
 
-**What agent forgot to execute**
-The agent pivoted away from fixing the frontend dependency mismatches at the user's request. However, this is the root cause of the main blocker (the broken preview URL) and must be addressed to allow for user testing.</analysis>
+Promo code: WGO4Y60 (60% discount)
+
+Content Creation
+
+
+
+
+
+Events (inline date/time pickers on web)
+
+
+
+Coupons (age restriction + exclusions fields)
+
+
+
+Raffles (terms/compliance fields)
+
+
+
+Jobs (grouped role dropdown)
+
+Content Management
+
+
+
+
+
+My Events / My Coupons / My Raffles load and filter correctly
+
+
+
+Job Board create + navigation working
+
+Discovery / Find Workers
+
+
+
+
+
+Find Workers loads 93 profiles (3 real + 90 showcase)
+
+
+
+Role filter and State filter working
+
+
+
+Showcase profiles have badge + contact disabled
+
+Admin Tools
+
+
+
+
+
+Admin impersonation system functional
+
+
+
+Admin edit-entrepreneur page available for selecting target users
+
+
+
+R2 media browsing endpoint exists for admin tooling
+
+UX / Navigation Improvements
+
+
+
+
+
+Major navigation loops removed across the app
+
+
+
+Forms improved with validation and consistent pickers
+
+
+
+🚨 MUST-FIX CHECKLIST (Before Production)
+
+1) Bio Paste Issue (P0)
+
+Problem: Bio field paste can fail on /profile/edit-entrepreneur.
+
+Verification steps (must pass in a fresh InPrivate window):
+
+
+
+
+
+Open a fresh InPrivate window
+
+
+
+Login as Club Euphoria → impersonate Dboy Stackalini
+
+
+
+Go to /profile/edit-entrepreneur
+
+
+
+Paste 2 lines into Bio → Save → Refresh → confirm text persists
+
+Acceptance: Ctrl+V and right-click paste work consistently on web and persist after Save + refresh.
+
+Primary file: /app/frontend/app/profile/edit-entrepreneur.tsx
+
+2) Back Button Navigation (P0)
+
+Problem: Back arrow on /profile/edit-entrepreneur may not navigate correctly after save.
+
+Verification steps:
+
+
+
+
+
+From /profile/edit-entrepreneur, click back arrow
+
+
+
+If impersonating → must route to /admin/edit-entrepreneur in one click
+
+
+
+If not impersonating → must route to /dashboard (or profile view)
+
+Acceptance: Reliable one-click navigation, no loops.
+
+Primary file: /app/frontend/app/profile/edit-entrepreneur.tsx
+
+3) Localhost API Calls (P0 / Critical)
+
+Problem: Some pages (especially /profile/edit-entrepreneur) have repeatedly regressed to calling http://localhost:8001.
+
+Verification steps:
+
+
+
+
+
+Fresh InPrivate window
+
+
+
+DevTools → Network tab
+
+
+
+Search/filter for “localhost” → must be ZERO requests
+
+
+
+Confirm /api/profile and /api/profile/tier-limits hit the preview domain and load successfully
+
+Acceptance: All API calls go to https://test-ready-preview.preview.emergentagent.com with no ERR_CONNECTION_REFUSED.
+
+Root cause: API_URL/baseURL is defined in many frontend files (fragile).
+
+Recommended fix: Centralize API client (single axios instance) in something like /app/frontend/utils/api.ts and import everywhere.
+
+
+
+🧪 Test Profiles for MUST-FIX Verification
+
+Use these via Club Euphoria impersonation:
+
+
+
+
+
+Dboy Stackalini (ID: a7b57c11-e0ef-4ea7-bf43-a271879f6cc3)
+
+
+
+The Lace Nerd (ID: 82b44d84-a9cc-4f09-b7ed-28a6daea548a)
+
+
+
+D.Petty (ID: d13c88af-f5e1-4f27-9dfc-6f3287583b13)
+
+
+
+📋 NEXT SESSION: Structured Occupations System (Phase 1 MVP)
+
+Goal: Replace the current flat “chip wall” with a structured system that supports better search/filtering.
+
+Phase 1 MVP scope:
+
+
+
+
+
+Core Occupations multi-select (max 5)
+
+
+
+Musical Artist subcategory dropdown (Rapper, R&B Artist, etc.)
+
+
+
+“Other” option with text input (core + subtype)
+
+
+
+Search/filter integration: profiles appear under every selected core occupation
+
+
+
+Best-effort migration script from existing flat occupations to new structured model
+
+Platform-wide impact: Registration + Edit Profile + Search/Filtering.
+
+Note: A temporary patch to add “Songwriter” and “Music Producer” to the current flat list is acceptable, but will be superseded by the redesign.
+
+
+
+📊 Session Stats / Data State
+
+
+
+
+
+Fixes delivered: 40+
+
+
+
+Token usage: ~445K / 1M
+
+
+
+Database: 104 users (14 real + 90 showcase)
+
+
+
+🎯 Priority Order for Next Agent
+
+
+
+
+
+Close MUST-FIX P0s (bio paste persistence, back routing, localhost calls) with verification steps above
+
+
+
+Implement Occupations System Phase 1 MVP
+
+
+
+Run broader regression testing on core flows (auth, create/manage content, Find Workers, impersonation)
+</analysis>

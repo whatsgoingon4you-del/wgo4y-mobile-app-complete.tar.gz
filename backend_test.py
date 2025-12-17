@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 # Backend URL from environment
-BACKEND_URL = "https://wgo4y-repair.preview.emergentagent.com/api"
+BACKEND_URL = "https://test-ready-preview.preview.emergentagent.com/api"
 
 # Test data
 timestamp = int(time.time())

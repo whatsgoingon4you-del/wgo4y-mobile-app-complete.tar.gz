@@ -33,7 +33,7 @@ import { isValidPhoneNumber } from '../../utils/phoneFormatter';
 import { parseVideoUrl, isValidVideoUrl } from '../../utils/videoUtils';
 import { parseMusicUrl, isValidMusicUrl, getMusicPlatformIcon, getMusicPlatformColor, getMusicPlatformName } from '../../utils/musicUtils';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -1018,18 +1018,44 @@ export default function EditEntrepreneurProfile() {
 
               {/* Bio */}
               <Text style={styles.label}>Bio</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={bio}
-                onChangeText={(text) => text.length <= 300 && setBio(text)}
-                placeholder="Tell us about yourself and your services..."
-                placeholderTextColor="#999"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                accessibilityLabel="Bio text area"
-                accessibilityHint="Describe yourself and your services in up to 300 characters"
-              />
+              {Platform.OS === 'web' ? (
+                <textarea
+                  value={bio}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    if (newValue.length <= 300) {
+                      setBio(newValue);
+                    }
+                  }}
+                  placeholder="Tell us about yourself and your services..."
+                  rows={4}
+                  maxLength={300}
+                  style={{
+                    borderWidth: '1px',
+                    borderColor: '#ddd',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    fontSize: '16px',
+                    fontFamily: 'inherit',
+                    width: '100%',
+                    resize: 'vertical',
+                    lineHeight: '1.5'
+                  }}
+                />
+              ) : (
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={bio}
+                  onChangeText={(text) => text.length <= 300 && setBio(text)}
+                  placeholder="Tell us about yourself and your services..."
+                  placeholderTextColor="#999"
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  accessibilityLabel="Bio text area"
+                  accessibilityHint="Describe yourself and your services in up to 300 characters"
+                />
+              )}
               <Text style={styles.charCount}>{bio.length}/300</Text>
             </View>
           )}

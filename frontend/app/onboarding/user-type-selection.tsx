@@ -203,7 +203,7 @@ export default function UserTypeSelectionScreen() {
       try {
         const token = await AsyncStorage.getItem('auth_token');
         if (token) {
-          const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
+          const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com';
           await axios.put(
             `${API_URL}/api/profile`,
             { user_type: selectedType },

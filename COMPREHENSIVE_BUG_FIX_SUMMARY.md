@@ -322,7 +322,7 @@ if existing_coupon:
 - ✅ All changes committed to codebase
 
 ### Production URL
-- **Backend:** `https://wgo4y-repair.preview.emergentagent.com`
+- **Backend:** `https://test-ready-preview.preview.emergentagent.com`
 - **Database:** MongoDB (85 user profiles loaded)
 
 ### Environment

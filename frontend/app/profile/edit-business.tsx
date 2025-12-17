@@ -29,7 +29,7 @@ import { GROUPED_ENTERTAINMENT_CATEGORIES } from '../onboarding/business/grouped
 import { PhoneInput } from '../../components/PhoneInput';
 import { parseVideoUrl, isValidVideoUrl } from '../../utils/videoUtils';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com';
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'https://test-ready-preview.preview.emergentagent.com';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
