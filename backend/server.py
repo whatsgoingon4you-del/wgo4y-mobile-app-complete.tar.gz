@@ -788,11 +788,13 @@ async def login(credentials: UserLogin):
         print(f"Password verification failed for user: {search_term}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    token = create_token(user['_id'])
+    # Use 'id' field (UUID string) instead of '_id' (ObjectId) to avoid serialization issues
+    user_id = user.get('id') or str(user['_id'])
+    token = create_token(user_id)
     return {
         'token': token,
         'user': {
-            'id': user['_id'],
+            'id': user_id,
             'username': user['username'],
             'email': user['email'],
             'user_type': user['user_type'],
