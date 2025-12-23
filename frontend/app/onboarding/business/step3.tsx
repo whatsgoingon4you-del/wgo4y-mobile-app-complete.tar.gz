@@ -17,6 +17,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../../../utils/api';
 
 export default function BusinessStep3() {
   const router = useRouter();
@@ -39,27 +40,26 @@ export default function BusinessStep3() {
       const savedData = await AsyncStorage.getItem('business_step3_progress');
       if (savedData) {
         const data = JSON.parse(savedData);
-        if (data.businessPhotos && Array.isArray(data.businessPhotos)) {
-          setBusinessPhotos(data.businessPhotos);
-          console.log('Loaded business Step 3 progress:', data.businessPhotos.length, 'photos');
-        }
-        // Load social media links
+        // Only load social media links (NOT base64 images)
         if (data.instagram) setInstagram(data.instagram);
         if (data.facebook) setFacebook(data.facebook);
         if (data.twitter) setTwitter(data.twitter);
+        console.log('Loaded business Step 3 progress: social links');
       }
     } catch (error) {
       console.error('Error loading Step 3 progress:', error);
     }
   };
 
-  const saveProgress = async (photos: string[], socialData?: { instagram?: string, facebook?: string, twitter?: string }) => {
+  const saveProgress = async (socialData?: { instagram?: string, facebook?: string, twitter?: string }) => {
     try {
+      // DON'T store base64 images in localStorage (causes quota exceeded)
+      // Only store social media links
       const progressData = {
-        businessPhotos: photos,
         instagram: socialData?.instagram ?? instagram,
         facebook: socialData?.facebook ?? facebook,
         twitter: socialData?.twitter ?? twitter,
+        photoCount: businessPhotos.length, // Store count only, not actual images
       };
       await AsyncStorage.setItem('business_step3_progress', JSON.stringify(progressData));
     } catch (error) {
@@ -100,14 +100,16 @@ export default function BusinessStep3() {
 
       const updatedPhotos = [...businessPhotos, base64Image];
       setBusinessPhotos(updatedPhotos);
-      await saveProgress(updatedPhotos);
+      // Don't save photos to localStorage (causes quota exceeded)
+      await saveProgress(); // Save social links only
     }
   };
 
   const removePhoto = async (index: number) => {
     const newPhotos = businessPhotos.filter((_, i) => i !== index);
     setBusinessPhotos(newPhotos);
-    await saveProgress(newPhotos);
+    // Don't save photos to localStorage
+    await saveProgress();
   };
 
   const handleComplete = async () => {
@@ -174,8 +176,8 @@ export default function BusinessStep3() {
         business_logo: params.businessLogo ? 'has logo' : 'no logo',
       });
 
-      const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
-      const response = await fetch(`${backendUrl}/api/profile`, {
+      // Use centralized API_URL (never localhost)
+      const response = await fetch(`${API_URL}/api/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
