@@ -15,21 +15,29 @@ import Constants from 'expo-constants';
 // For web deployments, use same-origin (relative path) to avoid CORS issues
 // For mobile/Expo, use the configured backend URL
 const getApiUrl = (): string => {
-  // Priority 1: Explicit environment variable
+  // Priority 1: For WEB, always use same-origin to avoid CORS
+  if (typeof window !== 'undefined') {
+    // Check if we have an explicit override (for special cases only)
+    const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+    
+    // If env URL is set AND different from current origin, log warning
+    if (envUrl && envUrl !== window.location.origin) {
+      console.warn('⚠️ [API Client] EXPO_PUBLIC_BACKEND_URL is set but will be ignored on web');
+      console.warn('⚠️ [API Client] Using same-origin instead:', window.location.origin);
+    }
+    
+    // Always use same-origin for web (works with Kubernetes ingress routing)
+    return window.location.origin;
+  }
+  
+  // Priority 2: For MOBILE/NATIVE, use explicit environment variable
   if (process.env.EXPO_PUBLIC_BACKEND_URL) {
     return process.env.EXPO_PUBLIC_BACKEND_URL;
   }
   
-  // Priority 2: Expo config extra
+  // Priority 3: Expo config extra
   if (Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL) {
     return Constants.expoConfig.extra.EXPO_PUBLIC_BACKEND_URL;
-  }
-  
-  // Priority 3: Same-origin (for web deployments)
-  // This works when backend and frontend are served from same domain
-  if (typeof window !== 'undefined') {
-    // Web environment - use current origin
-    return window.location.origin;
   }
   
   // Fallback: localhost for development

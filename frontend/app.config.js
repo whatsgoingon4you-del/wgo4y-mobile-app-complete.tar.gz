@@ -51,7 +51,10 @@ export default {
       typedRoutes: true,
     },
     extra: {
-      EXPO_PUBLIC_BACKEND_URL: process.env.EXPO_PUBLIC_BACKEND_URL || 'https://wgo4y-repair.preview.emergentagent.com',
+      // EXPO_PUBLIC_BACKEND_URL should NOT be set for web deployments
+      // Web will use same-origin (window.location.origin) automatically
+      // Only set this for mobile builds that need explicit backend URL
+      EXPO_PUBLIC_BACKEND_URL: process.env.EXPO_PUBLIC_BACKEND_URL,
     },
   },
 };

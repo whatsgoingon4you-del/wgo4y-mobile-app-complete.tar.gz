@@ -56,7 +56,10 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # JWT configuration
-JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key-change-in-production')
+# JWT Configuration - REQUIRED in production
+JWT_SECRET = os.environ.get('JWT_SECRET')
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET is required - set it in environment variables")
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION_HOURS = 24 * 7  # 7 days
 
@@ -578,10 +581,15 @@ def decode_token(token: str) -> Dict[str, Any]:
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
     token = credentials.credentials
     payload = decode_token(token)
-    # Token contains 'user_id' which is the UUID string, not MongoDB ObjectId
-    user = await db.users.find_one({'id': payload['user_id']}, {'_id': 0})
+    # Query by _id (the single source of truth)
+    user = await db.users.find_one({'_id': payload['user_id']})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Compatibility bridge: ensure 'id' field exists for backward compatibility
+    if "id" not in user:
+        user["id"] = str(user["_id"])
+    
     return user
 
 # ============= TIER CHECKING HELPER =============
@@ -789,13 +797,14 @@ async def login(credentials: UserLogin):
         print(f"Password verification failed for user: {search_term}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Use 'id' field (UUID string) instead of '_id' (ObjectId) to avoid serialization issues
-    user_id = user.get('id') or str(user['_id'])
+    # Always use _id as the single source of truth for JWT
+    user_id = str(user['_id'])
     token = create_token(user_id)
+    
     return {
         'token': token,
         'user': {
-            'id': user_id,
+            'id': user_id,  # Return _id as 'id' for consistency
             'username': user['username'],
             'email': user['email'],
             'user_type': user['user_type'],
