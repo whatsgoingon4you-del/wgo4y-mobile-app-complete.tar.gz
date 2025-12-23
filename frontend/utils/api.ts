@@ -11,11 +11,32 @@ import Constants from 'expo-constants';
  * Import either API_URL or apiClient from this file.
  */
 
-// Get API URL from environment with fallback
-export const API_URL = 
-  process.env.EXPO_PUBLIC_BACKEND_URL || 
-  Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
-  'https://wgo4y-repair.preview.emergentagent.com';
+// Get API URL from environment with intelligent fallback
+// For web deployments, use same-origin (relative path) to avoid CORS issues
+// For mobile/Expo, use the configured backend URL
+const getApiUrl = (): string => {
+  // Priority 1: Explicit environment variable
+  if (process.env.EXPO_PUBLIC_BACKEND_URL) {
+    return process.env.EXPO_PUBLIC_BACKEND_URL;
+  }
+  
+  // Priority 2: Expo config extra
+  if (Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL) {
+    return Constants.expoConfig.extra.EXPO_PUBLIC_BACKEND_URL;
+  }
+  
+  // Priority 3: Same-origin (for web deployments)
+  // This works when backend and frontend are served from same domain
+  if (typeof window !== 'undefined') {
+    // Web environment - use current origin
+    return window.location.origin;
+  }
+  
+  // Fallback: localhost for development
+  return 'http://localhost:8001';
+};
+
+export const API_URL = getApiUrl();
 
 // Debug logging (only in development)
 if (__DEV__) {
