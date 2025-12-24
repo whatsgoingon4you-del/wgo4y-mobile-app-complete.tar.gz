@@ -922,6 +922,12 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 8,
   },
+  rejectionReason: {
+    fontSize: 12,
+    color: '#FF3B30',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
   cardActions: {
     flexDirection: 'row',
     gap: 12,
