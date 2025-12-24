@@ -1215,7 +1215,12 @@ async def update_profile(profile_data: UserProfileUpdate, user: Dict = Depends(g
     if profile_data.business_logo is not None:
         update_dict['business_logo'] = profile_data.business_logo
     if profile_data.business_photos is not None:
-        update_dict['business_photos'] = profile_data.business_photos
+        # Business photos need approval - add metadata to each
+        update_dict['business_photos'] = add_approval_metadata_to_items(
+            profile_data.business_photos,
+            str(user['_id']),
+            'business_photo'
+        )
     if profile_data.capacity is not None:
         update_dict['capacity'] = profile_data.capacity
     if profile_data.amenities is not None:
