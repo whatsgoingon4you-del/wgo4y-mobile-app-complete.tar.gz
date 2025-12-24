@@ -5458,6 +5458,9 @@ async def moderate_content(
             'job': 'job_postings'
         }
         
+        user_id = None  # Will be set below
+        
+        # Handle collection-level content (events, raffles, etc.)
         if content_type in collection_map:
             collection = db[collection_map[content_type]]
             
@@ -5478,23 +5481,104 @@ async def moderate_content(
             # Get document to find user_id for notification
             doc = await collection.find_one({'_id': content_id})
             user_id = str(doc.get('created_by') or doc.get('owner_id') or '')
+        
+        # Handle embedded item-level content (profile media, VIP services)
+        elif content_type in ['profile_media', 'vip_service']:
+            from bson import ObjectId
             
-            # Send rejection notification
-            if new_status == 'rejected' and user_id:
-                import uuid
-                notification = {
-                    '_id': str(uuid.uuid4()),
-                    'user_id': user_id,
-                    'type': 'content_rejected',
-                    'content_type': content_type,
-                    'content_id': content_id,
-                    'title': f"{content_type.replace('_', ' ').title()} Rejected",
-                    'message': f"Your {content_type.replace('_', ' ')} was rejected. {action.rejection_reason or ''}",
-                    'rejection_reason': action.rejection_reason,
-                    'created_at': datetime.now(timezone.utc),
-                    'read': False
-                }
-                await db.notifications.insert_one(notification)
+            # Find the user and update the specific item in the array
+            # Search all users to find which one has this item_id
+            users = await db.users.find({}).to_list(10000)
+            
+            found = False
+            for user_doc in users:
+                arrays_to_check = []
+                
+                if content_type == 'profile_media':
+                    # Check all media arrays
+                    if user_doc.get('profile_photo_data') and isinstance(user_doc.get('profile_photo_data'), dict):
+                        if user_doc['profile_photo_data'].get('item_id') == content_id:
+                            # Update profile_photo_data
+                            user_doc['profile_photo_data']['approval_status'] = new_status
+                            user_doc['profile_photo_data']['reviewed_at'] = datetime.now(timezone.utc)
+                            user_doc['profile_photo_data']['reviewed_by'] = str(user['_id'])
+                            if action.rejection_reason:
+                                user_doc['profile_photo_data']['rejection_reason'] = action.rejection_reason
+                            
+                            await db.users.update_one(
+                                {'_id': user_doc['_id']},
+                                {'$set': {'profile_photo_data': user_doc['profile_photo_data']}}
+                            )
+                            user_id = str(user_doc['_id'])
+                            found = True
+                            break
+                    
+                    for array_name in ['portfolio_photos', 'portfolio_videos', 'business_photos']:
+                        items = user_doc.get(array_name, [])
+                        for idx, item in enumerate(items):
+                            if isinstance(item, dict) and item.get('item_id') == content_id:
+                                # Update the item in the array
+                                items[idx]['approval_status'] = new_status
+                                items[idx]['reviewed_at'] = datetime.now(timezone.utc)
+                                items[idx]['reviewed_by'] = str(user['_id'])
+                                if action.rejection_reason:
+                                    items[idx]['rejection_reason'] = action.rejection_reason
+                                
+                                await db.users.update_one(
+                                    {'_id': user_doc['_id']},
+                                    {'$set': {array_name: items}}
+                                )
+                                user_id = str(user_doc['_id'])
+                                found = True
+                                break
+                        
+                        if found:
+                            break
+                
+                elif content_type == 'vip_service':
+                    services = user_doc.get('services_offered', [])
+                    for idx, service in enumerate(services):
+                        if isinstance(service, dict) and service.get('item_id') == content_id:
+                            # Update the service in the array
+                            services[idx]['approval_status'] = new_status
+                            services[idx]['reviewed_at'] = datetime.now(timezone.utc)
+                            services[idx]['reviewed_by'] = str(user['_id'])
+                            if action.rejection_reason:
+                                services[idx]['rejection_reason'] = action.rejection_reason
+                            
+                            await db.users.update_one(
+                                {'_id': user_doc['_id']},
+                                {'$set': {'services_offered': services}}
+                            )
+                            user_id = str(user_doc['_id'])
+                            found = True
+                            break
+                
+                if found:
+                    break
+            
+            if not found:
+                raise HTTPException(status_code=404, detail=f"Item not found: {content_type} {content_id}")
+        
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported content_type: {content_type}")
+        
+        # Send rejection notification
+        if new_status == 'rejected' and user_id:
+            import uuid
+            notification = {
+                '_id': str(uuid.uuid4()),
+                'user_id': user_id,
+                'type': 'content_rejected',
+                'content_type': content_type,
+                'content_id': content_id,
+                'title': f"{content_type.replace('_', ' ').title()} Rejected",
+                'message': f"Your {content_type.replace('_', ' ')} was rejected. {action.rejection_reason or ''}",
+                'rejection_reason': action.rejection_reason,
+                'created_at': datetime.now(timezone.utc),
+                'read': False
+            }
+            await db.notifications.insert_one(notification)
         
         return {
             'success': True,
