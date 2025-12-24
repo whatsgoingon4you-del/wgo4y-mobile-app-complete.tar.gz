@@ -12,7 +12,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import asyncio
 
 # Backend URL from environment
-BACKEND_URL = "https://test-ready-preview.preview.emergentagent.com/api"
+BACKEND_URL = "https://modqueue-dash.preview.emergentagent.com/api"
 MONGO_URL = "mongodb://localhost:27017"
 DB_NAME = "test_database"
 

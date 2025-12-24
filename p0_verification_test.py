@@ -19,7 +19,7 @@ import time
 from datetime import datetime
 
 # Backend URL from review request
-BACKEND_URL = "https://wgo4y-repair.preview.emergentagent.com/api"
+BACKEND_URL = "https://modqueue-dash.preview.emergentagent.com/api"
 
 # Test credentials from review request
 ADMIN_USERNAME = "club_euphoria"
@@ -218,7 +218,7 @@ def main():
         
         # Test 1.3: Check backend URL configuration
         log_info("\nTest 1.3: Verify all API calls use correct base URL")
-        correct_base_url = "https://wgo4y-repair.preview.emergentagent.com"
+        correct_base_url = "https://modqueue-dash.preview.emergentagent.com"
         
         # All our test calls used the correct URL
         assert_test(

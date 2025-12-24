@@ -322,7 +322,7 @@ if existing_coupon:
 - ✅ All changes committed to codebase
 
 ### Production URL
-- **Backend:** `https://test-ready-preview.preview.emergentagent.com`
+- **Backend:** `https://modqueue-dash.preview.emergentagent.com`
 - **Database:** MongoDB (85 user profiles loaded)
 
 ### Environment

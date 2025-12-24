@@ -260,7 +260,7 @@ backend:
           
           **TEST DATE:** 2025-01-18
           **TEST FILE:** /app/backend_test.py
-          **BACKEND URL:** https://test-ready-preview.preview.emergentagent.com/api
+          **BACKEND URL:** https://modqueue-dash.preview.emergentagent.com/api
           
           **FULL E2E TEST FLOW:**
           
@@ -862,7 +862,7 @@ agent_communication:
       
       **TEST DATE:** 2025-01-18
       **TEST FILE:** /app/backend_test.py
-      **BACKEND URL:** https://test-ready-preview.preview.emergentagent.com/api
+      **BACKEND URL:** https://modqueue-dash.preview.emergentagent.com/api
       
       **SUMMARY:**
       Comprehensive E2E testing of the un-archive logic for worker contact requests.
@@ -951,7 +951,7 @@ agent_communication:
       
       **TEST DATE:** 2025-11-18 09:09:53
       **TEST FILE:** /app/backend_test.py
-      **BACKEND URL:** https://test-ready-preview.preview.emergentagent.com/api
+      **BACKEND URL:** https://modqueue-dash.preview.emergentagent.com/api
       
       **SUMMARY:**
       Archive filtering works perfectly, but conversations don't reappear after new messages are sent.
@@ -4297,7 +4297,7 @@ agent_communication:
       
       **TEST DATE:** 2025-12-17
       **TEST FILE:** /app/p0_verification_test.py
-      **BACKEND URL:** https://wgo4y-repair.preview.emergentagent.com/api
+      **BACKEND URL:** https://modqueue-dash.preview.emergentagent.com/api
       **TEST CREDENTIALS:** club_euphoria / Test1234 (Admin with Gold tier)
       
       **OVERALL RESULTS: 8/8 TESTS PASSED (100% SUCCESS RATE)**
@@ -4312,7 +4312,7 @@ agent_communication:
       5. ✅ Backend URL configuration is correct
       
       **Verification Details:**
-      - All API calls successfully use: https://wgo4y-repair.preview.emergentagent.com/api
+      - All API calls successfully use: https://modqueue-dash.preview.emergentagent.com/api
       - NO localhost:8001 references found in any backend responses
       - NO localhost references found in response headers
       - Backend is correctly configured to use production URL
