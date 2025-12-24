@@ -57,6 +57,8 @@ export default function ApprovalDashboard() {
     { id: 'raffle', label: 'Raffles', icon: 'gift' },
     { id: 'coupon', label: 'Coupons', icon: 'pricetag' },
     { id: 'job', label: 'Jobs', icon: 'briefcase' },
+    { id: 'profile_media', label: 'Profile Media', icon: 'images' },
+    { id: 'vip_service', label: 'VIP Services', icon: 'star' },
   ];
 
   const statusTabs = [
