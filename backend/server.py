@@ -1170,7 +1170,20 @@ async def update_profile(profile_data: UserProfileUpdate, user: Dict = Depends(g
     if profile_data.email is not None:
         update_dict['email'] = profile_data.email
     if profile_data.profile_photo is not None:
-        update_dict['profile_photo'] = profile_data.profile_photo
+        # Profile photo needs approval
+        if isinstance(profile_data.profile_photo, str) and profile_data.profile_photo:
+            # Create approval-tracked object for profile photo
+            import uuid
+            update_dict['profile_photo_data'] = {
+                'item_id': str(uuid.uuid4()),
+                'url': profile_data.profile_photo,
+                'approval_status': 'pending',
+                'submitted_at': datetime.now(timezone.utc),
+                'submitted_by': str(user['_id']),
+                'item_type': 'profile_photo'
+            }
+            # Keep the string field for backward compatibility
+            update_dict['profile_photo'] = profile_data.profile_photo
     if profile_data.venue_categories is not None:
         update_dict['venue_categories'] = profile_data.venue_categories
     if profile_data.entrepreneur_categories is not None:
