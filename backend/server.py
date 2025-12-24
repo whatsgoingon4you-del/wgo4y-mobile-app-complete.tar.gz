@@ -1216,7 +1216,7 @@ async def update_profile(profile_data: UserProfileUpdate, user: Dict = Depends(g
     # Return updated profile
     updated_user = await db.users.find_one({'_id': user['_id']})
     return {
-        'id': updated_user['_id'],
+        'id': str(updated_user['_id']),  # Convert ObjectId to string for JSON serialization
         'username': updated_user['username'],
         'email': updated_user['email'],
         'user_type': updated_user['user_type'],
