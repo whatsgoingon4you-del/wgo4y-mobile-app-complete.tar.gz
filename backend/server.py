@@ -5145,17 +5145,43 @@ async def get_approval_queue(
             
             if ctype in ['event', 'raffle', 'coupon', 'job']:
                 query = {'approval_status': status}
-                docs = await collection.find(query, {'_id': 0}).to_list(1000)
+                docs = await collection.find(query).to_list(1000)
                 
                 for doc in docs:
+                    # Get content ID - all use '_id' field
+                    content_id = str(doc.get('_id', ''))
+                    
+                    # Get user ID from different field names
+                    user_id = str(doc.get('created_by') or doc.get('owner_id') or '')
+                    
+                    # Lookup user name
+                    user_name = None
+                    if user_id:
+                        try:
+                            from bson import ObjectId
+                            # Handle both ObjectId and UUID string formats
+                            if len(user_id) == 24:
+                                user_doc = await db.users.find_one({'_id': ObjectId(user_id)})
+                            else:
+                                user_doc = await db.users.find_one({'_id': user_id})
+                            
+                            if user_doc:
+                                user_name = user_doc.get('business_name') or user_doc.get('full_name') or user_doc.get('username')
+                        except:
+                            pass
+                    
+                    # Remove _id from content_data to avoid serialization issues
+                    content_data = {k: v for k, v in doc.items() if k != '_id'}
+                    
                     item = {
                         'content_type': ctype,
-                        'content_id': doc.get('id', doc.get('event_id', doc.get('raffle_id', doc.get('coupon_id', doc.get('job_id'))))),
-                        'user_id': doc.get('organizer_id', doc.get('business_id', doc.get('user_id'))),
+                        'content_id': content_id,
+                        'user_id': user_id,
+                        'user_name': user_name,
                         'status': doc.get('approval_status', 'pending'),
                         'submitted_at': doc.get('created_at'),
                         'metadata': doc.get('approval_metadata', {}),
-                        'content_data': doc
+                        'content_data': content_data
                     }
                     queue_items.append(item)
         
