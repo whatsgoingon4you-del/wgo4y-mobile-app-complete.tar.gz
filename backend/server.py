@@ -3444,12 +3444,19 @@ async def create_job(
     
     job_dict = job_data.dict()
     job_dict['_id'] = job_id
-    job_dict['owner_id'] = user['_id']
+    job_dict['owner_id'] = str(user['_id'])
     job_dict['owner_name'] = user.get('business_name') or user.get('full_name') or user.get('username')
     job_dict['owner_type'] = user.get('user_type')
     job_dict['status'] = 'open'
     job_dict['created_at'] = datetime.utcnow()
     job_dict['updated_at'] = datetime.utcnow()
+    
+    # APPROVAL SYSTEM: All new job postings start as pending
+    job_dict['approval_status'] = 'pending'
+    job_dict['approval_metadata'] = {
+        'submitted_at': datetime.utcnow(),
+        'submitted_by': str(user['_id'])
+    }
     
     await db.job_postings.insert_one(job_dict)
     
