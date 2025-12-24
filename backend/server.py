@@ -1008,7 +1008,7 @@ async def get_profile(user: Dict = Depends(get_current_user)):
         has_portfolio = len(portfolio_photos) > 0
     
     return {
-        'id': user['_id'],
+        'id': str(user['_id']),  # Convert ObjectId to string for JSON serialization
         'username': user['username'],
         'email': user['email'],
         'user_type': user['user_type'],
