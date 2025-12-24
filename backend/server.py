@@ -5668,7 +5668,7 @@ async def get_approval_stats(
             'total_pending': 0
         }
         
-        content_types = ['event', 'raffle', 'coupon', 'job']
+        content_types = ['event', 'raffle', 'coupon', 'job', 'profile_media', 'vip_service']
         
         for content_type in content_types:
             for status in ['pending', 'approved', 'rejected']:
