@@ -1261,9 +1261,19 @@ async def update_profile(profile_data: UserProfileUpdate, user: Dict = Depends(g
     if profile_data.years_experience is not None:
         update_dict['years_experience'] = profile_data.years_experience
     if profile_data.portfolio_photos is not None:
-        update_dict['portfolio_photos'] = profile_data.portfolio_photos
+        # Portfolio photos need approval - add metadata to each
+        update_dict['portfolio_photos'] = add_approval_metadata_to_items(
+            profile_data.portfolio_photos,
+            str(user['_id']),
+            'portfolio_photo'
+        )
     if profile_data.portfolio_videos is not None:
-        update_dict['portfolio_videos'] = profile_data.portfolio_videos
+        # Portfolio videos need approval - add metadata to each
+        update_dict['portfolio_videos'] = add_approval_metadata_to_items(
+            profile_data.portfolio_videos,
+            str(user['_id']),
+            'portfolio_video'
+        )
     if profile_data.music_tracks is not None:
         update_dict['music_tracks'] = profile_data.music_tracks
     if profile_data.rate_structure is not None:
