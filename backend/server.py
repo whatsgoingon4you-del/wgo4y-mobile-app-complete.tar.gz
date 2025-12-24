@@ -5372,8 +5372,7 @@ async def mark_notification_read(
 
 
 
-# Mount the router
-app.include_router(api_router)
+# Mount the router - moved to end of file after all routes are defined
 
 
 
@@ -5519,16 +5518,26 @@ async def migrate_production_data(secret_key: str):
 
 
 
-# Include router
-app.include_router(api_router)
+# ============= MIDDLEWARE & FINAL ROUTER SETUP =============
+
+# CORS Configuration - Explicit allowlist for security
+# Add your production domain here when deploying
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Local development
+    "https://wgo4y.vercel.app",  # Production frontend
+    "https://venue-job-portal-2ub46.ondigitalocean.app",  # Deployed app
+]
 
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,  # Explicit allowlist instead of ["*"]
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include router ONCE at the end after all @api_router routes are defined
+app.include_router(api_router)
 
 logging.basicConfig(
     level=logging.INFO,
