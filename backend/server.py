@@ -606,6 +606,92 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     
     return user
 
+# ============= APPROVAL HELPER FUNCTIONS =============
+
+def add_approval_metadata_to_items(items: list, user_id: str, item_type: str) -> list:
+    """
+    Add approval metadata to media/service items if they don't have it.
+    Each item gets: item_id, approval_status, submitted_at, etc.
+    
+    Args:
+        items: List of media/service items
+        user_id: User ID submitting the items
+        item_type: Type of item (photo, video, service, etc.)
+    
+    Returns:
+        List of items with approval metadata
+    """
+    import uuid
+    processed_items = []
+    
+    for item in items:
+        # Handle string items (photos as URLs)
+        if isinstance(item, str):
+            # Convert string to object with approval metadata
+            processed_item = {
+                'item_id': str(uuid.uuid4()),
+                'url': item,
+                'approval_status': 'pending',
+                'submitted_at': datetime.now(timezone.utc),
+                'submitted_by': user_id,
+                'item_type': item_type
+            }
+        # Handle dict items (videos, services)
+        elif isinstance(item, dict):
+            # Add approval metadata if not present
+            if 'item_id' not in item:
+                item['item_id'] = str(uuid.uuid4())
+            if 'approval_status' not in item:
+                item['approval_status'] = 'pending'
+                item['submitted_at'] = datetime.now(timezone.utc)
+                item['submitted_by'] = user_id
+                item['item_type'] = item_type
+            # If item was modified, reset to pending (edit/resubmit behavior)
+            # Check if this is an update by seeing if reviewed_at exists
+            elif 'reviewed_at' in item:
+                # Item was previously reviewed, so this is an edit - reset to pending
+                item['approval_status'] = 'pending'
+                item['submitted_at'] = datetime.now(timezone.utc)
+                item['reviewed_at'] = None
+                item['reviewed_by'] = None
+                item['rejection_reason'] = None
+            
+            processed_item = item
+        else:
+            # Unknown type, skip
+            continue
+        
+        processed_items.append(processed_item)
+    
+    return processed_items
+
+def filter_approved_items(items: list) -> list:
+    """
+    Filter items to only show approved ones (for public view).
+    
+    Args:
+        items: List of items with approval metadata
+    
+    Returns:
+        List of approved items only
+    """
+    if not items:
+        return []
+    
+    approved = []
+    for item in items:
+        # Handle string items (old data without approval metadata)
+        if isinstance(item, str):
+            # Legacy data - assume approved
+            approved.append(item)
+        # Handle dict items
+        elif isinstance(item, dict):
+            # Only include if approved (or if no approval_status - legacy data)
+            if item.get('approval_status') == 'approved' or 'approval_status' not in item:
+                approved.append(item)
+    
+    return approved
+
 # ============= TIER CHECKING HELPER =============
 
 def has_premium_tier(user: Dict[str, Any]) -> bool:
