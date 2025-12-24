@@ -4353,19 +4353,56 @@ async def get_users(user: Dict = Depends(get_current_user)):
 @api_router.get("/users/{user_id}")
 async def get_user_profile(user_id: str, user: Dict = Depends(get_current_user)):
     """Get public profile information for any user"""
-    target_user = await db.users.find_one({'_id': user_id})
+    from bson import ObjectId
+    
+    # Handle both ObjectId and UUID string formats
+    try:
+        if len(user_id) == 24:
+            target_user = await db.users.find_one({'_id': ObjectId(user_id)})
+        else:
+            target_user = await db.users.find_one({'_id': user_id})
+    except:
+        target_user = await db.users.find_one({'_id': user_id})
     
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # APPROVAL FILTERING: Only show approved media/services to public
+    # If viewing own profile, show all items with status labels
+    is_own_profile = str(target_user['_id']) == str(user['_id'])
+    
+    if is_own_profile:
+        # Own profile - show all items (pending, approved, rejected)
+        business_photos = target_user.get('business_photos', [])
+        portfolio_photos = target_user.get('portfolio_photos', [])
+        services_offered = target_user.get('services_offered', [])
+        profile_photo = target_user.get('profile_photo')
+        profile_photo_data = target_user.get('profile_photo_data')
+    else:
+        # Public view - only show approved items
+        business_photos = filter_approved_items(target_user.get('business_photos', []))
+        portfolio_photos = filter_approved_items(target_user.get('portfolio_photos', []))
+        services_offered = filter_approved_items(target_user.get('services_offered', []))
+        
+        # Profile photo - only show if approved
+        profile_photo_data = target_user.get('profile_photo_data')
+        if profile_photo_data and isinstance(profile_photo_data, dict):
+            if profile_photo_data.get('approval_status') == 'approved':
+                profile_photo = profile_photo_data.get('url')
+            else:
+                profile_photo = None
+        else:
+            # Legacy data without approval - assume approved
+            profile_photo = target_user.get('profile_photo')
+    
     # Return public profile information
     return {
-        'id': target_user['_id'],
+        'id': str(target_user['_id']),
         'username': target_user['username'],
         'full_name': target_user.get('full_name', target_user['username']),
         'user_type': target_user.get('user_type'),
         'membership_tier': target_user.get('membership_tier', 'basic'),
-        'profile_photo': target_user.get('profile_photo'),
+        'profile_photo': profile_photo,
         'location': target_user.get('location'),
         'bio': target_user.get('bio'),
         'phone': target_user.get('phone'),
@@ -4377,16 +4414,19 @@ async def get_user_profile(user_id: str, user: Dict = Depends(get_current_user))
         'business_phone': target_user.get('business_phone'),
         'business_description': target_user.get('business_description'),
         'business_logo': target_user.get('business_logo'),
-        'business_photos': target_user.get('business_photos', []),
+        'business_photos': business_photos,  # FILTERED
         'amenities': target_user.get('amenities', []),
         'venue_categories': target_user.get('venue_categories', []),
         'entertainment_categories': target_user.get('entertainment_categories', []),
         'social_links': target_user.get('social_links', {}),
         # Entrepreneur fields
-        'services_offered': target_user.get('services_offered', []),
-        'portfolio_photos': target_user.get('portfolio_photos', []),
+        'services_offered': services_offered,  # FILTERED
+        'portfolio_photos': portfolio_photos,  # FILTERED
         'pricing_info': target_user.get('pricing_info'),
         'services': target_user.get('services', []),
+        # Include raw data for owner view (with approval status)
+        'is_own_profile': is_own_profile,
+        'profile_photo_data': profile_photo_data if is_own_profile else None,
     }
 
 
