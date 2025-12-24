@@ -681,6 +681,7 @@ export default function EditEntrepreneurProfile() {
     
     try {
       let isImpersonating = false;
+      let targetRoute = '/dashboard';
       
       // Check impersonation status from localStorage (web) or AsyncStorage (mobile)
       if (Platform.OS === 'web') {
@@ -688,35 +689,37 @@ export default function EditEntrepreneurProfile() {
         const impersonatedName = typeof window !== 'undefined' ? localStorage.getItem('impersonated_name') : null;
         isImpersonating = !!impersonatedName;
         console.log('🔙 Back button - Web impersonation check:', { impersonatedName, isImpersonating });
+        
+        targetRoute = isImpersonating ? '/admin/edit-entrepreneur' : '/dashboard';
       } else {
         // On mobile, check AsyncStorage (note: this is async, but we'll use a synchronous fallback)
         // For mobile, we assume non-impersonation by default since AsyncStorage.getItem is async
         isImpersonating = false;
         console.log('🔙 Back button - Mobile (assuming non-impersonating)');
+        targetRoute = '/dashboard';
       }
       
       console.log('🔙 Back button clicked - Impersonating:', isImpersonating);
       console.log('🔙 Current URL:', typeof window !== 'undefined' ? window.location.href : 'N/A');
+      console.log('🔙 Navigating to:', targetRoute);
       
-      if (isImpersonating) {
-        // If impersonating, go back to admin edit page
-        console.log('🔙 Navigating to: /admin/edit-entrepreneur');
-        router.replace('/admin/edit-entrepreneur');
+      // On web, use window.location for more reliable navigation
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        // Use window.location.href for immediate navigation on web
+        window.location.href = targetRoute;
       } else {
-        // Regular user - go to dashboard
-        console.log('🔙 Navigating to: /dashboard');
-        router.replace('/dashboard');
+        // On mobile, use router
+        router.replace(targetRoute);
       }
-      
-      // Log after navigation attempt
-      setTimeout(() => {
-        console.log('🔙 Navigation complete. New URL:', typeof window !== 'undefined' ? window.location.href : 'N/A');
-      }, 1000);
       
     } catch (error) {
       console.error('❌ Error in handleBack:', error);
       // Fallback to dashboard on error
-      router.replace('/dashboard');
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.href = '/dashboard';
+      } else {
+        router.replace('/dashboard');
+      }
     }
   };
 
