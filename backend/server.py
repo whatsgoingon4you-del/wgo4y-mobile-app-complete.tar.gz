@@ -1447,10 +1447,17 @@ async def create_event(event_data: EventCreate, user: Dict = Depends(get_current
     event_id = str(uuid.uuid4())
     event_dict = event_data.dict()
     event_dict['_id'] = event_id
-    event_dict['created_by'] = user['_id']
+    event_dict['created_by'] = str(user['_id'])
     event_dict['created_at'] = datetime.utcnow()
     event_dict['updated_at'] = datetime.utcnow()
     event_dict['tickets_available'] = event_data.capacity
+    
+    # APPROVAL SYSTEM: All new events start as pending
+    event_dict['approval_status'] = 'pending'
+    event_dict['approval_metadata'] = {
+        'submitted_at': datetime.utcnow(),
+        'submitted_by': str(user['_id'])
+    }
     
     # Backward compatibility: ensure categories is set
     if not event_dict.get('categories') and event_dict.get('category'):
@@ -2211,9 +2218,16 @@ async def create_coupon(coupon_data: CouponCreate, user: Dict = Depends(get_curr
     coupon_id = str(uuid.uuid4())
     coupon_dict = coupon_data.dict()
     coupon_dict['_id'] = coupon_id
-    coupon_dict['owner_id'] = user['_id']
+    coupon_dict['owner_id'] = str(user['_id'])
     coupon_dict['created_at'] = datetime.utcnow()
     coupon_dict['updated_at'] = datetime.utcnow()
+    
+    # APPROVAL SYSTEM: All new coupons start as pending
+    coupon_dict['approval_status'] = 'pending'
+    coupon_dict['approval_metadata'] = {
+        'submitted_at': datetime.utcnow(),
+        'submitted_by': str(user['_id'])
+    }
     
     # Auto-generate code if not provided
     if not coupon_dict.get('code'):
@@ -2443,8 +2457,8 @@ async def create_raffle(raffle_data: RaffleCreate, user: Dict = Depends(get_curr
     raffle_id = str(uuid.uuid4())
     raffle_dict = raffle_data.dict()
     raffle_dict['_id'] = raffle_id
-    raffle_dict['owner_id'] = user['_id']  # Track who created it
-    raffle_dict['created_by'] = user['_id']  # Also use created_by for consistency
+    raffle_dict['owner_id'] = str(user['_id'])  # Track who created it
+    raffle_dict['created_by'] = str(user['_id'])  # Also use created_by for consistency
     raffle_dict['owner_name'] = user.get('business_name') or user.get('full_name') or user.get('username')
     raffle_dict['owner_type'] = user.get('user_type')
     raffle_dict['created_at'] = datetime.utcnow()
@@ -2452,6 +2466,13 @@ async def create_raffle(raffle_data: RaffleCreate, user: Dict = Depends(get_curr
     raffle_dict['winner_user_id'] = None
     raffle_dict['winner_entry_id'] = None
     raffle_dict['winner_selected_at'] = None
+    
+    # APPROVAL SYSTEM: All new raffles start as pending
+    raffle_dict['approval_status'] = 'pending'
+    raffle_dict['approval_metadata'] = {
+        'submitted_at': datetime.utcnow(),
+        'submitted_by': str(user['_id'])
+    }
     
     await db.raffles.insert_one(raffle_dict)
     print(f"✅ Raffle created: {raffle_data.title} by {raffle_dict['owner_name']}")
