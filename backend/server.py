@@ -5282,27 +5282,31 @@ async def get_approval_queue(
         
         queue_items = []
         
-        content_types_map = {
-            'profile_photo': ('users', 'profile_photo'),
-            'gallery_image': ('users', 'portfolio_photos'),
-            'profile_video': ('users', 'portfolio_videos'),
-            'event': ('events', None),
-            'raffle': ('raffles', None),
-            'coupon': ('coupons', None),
-            'job': ('job_postings', None),
-        }
+        # Content types: collection-level (events, etc.) and item-level (profile media, services)
+        collection_level_types = ['event', 'raffle', 'coupon', 'job']
+        item_level_types = ['profile_media', 'vip_service']
         
         if content_type:
-            if content_type not in content_types_map:
+            if content_type in collection_level_types:
+                check_types = [content_type]
+            elif content_type in item_level_types:
+                check_types = [content_type]
+            else:
                 raise HTTPException(status_code=400, detail=f"Invalid content_type: {content_type}")
-            check_types = {content_type: content_types_map[content_type]}
         else:
-            check_types = content_types_map
+            check_types = collection_level_types + item_level_types
         
-        for ctype, (collection_name, field_name) in check_types.items():
-            collection = db[collection_name]
-            
-            if ctype in ['event', 'raffle', 'coupon', 'job']:
+        # Process collection-level content (events, raffles, coupons, jobs)
+        for ctype in check_types:
+            if ctype in collection_level_types:
+                collection_map = {
+                    'event': 'events',
+                    'raffle': 'raffles',
+                    'coupon': 'coupons',
+                    'job': 'job_postings'
+                }
+                
+                collection = db[collection_map[ctype]]
                 query = {'approval_status': status}
                 docs = await collection.find(query).to_list(1000)
                 
@@ -5343,6 +5347,65 @@ async def get_approval_queue(
                         'content_data': content_data
                     }
                     queue_items.append(item)
+            
+            # Process item-level content (profile media, VIP services)
+            elif ctype in item_level_types:
+                from bson import ObjectId
+                
+                # Query all users to find pending items in arrays
+                users = await db.users.find({}).to_list(10000)
+                
+                for user_doc in users:
+                    user_id = str(user_doc.get('_id'))
+                    user_name = user_doc.get('business_name') or user_doc.get('full_name') or user_doc.get('username')
+                    
+                    if ctype == 'profile_media':
+                        # Check all media arrays
+                        media_arrays = {
+                            'profile_photo': [user_doc.get('profile_photo_data')] if user_doc.get('profile_photo_data') else [],
+                            'portfolio_photo': user_doc.get('portfolio_photos', []),
+                            'portfolio_video': user_doc.get('portfolio_videos', []),
+                            'business_photo': user_doc.get('business_photos', [])
+                        }
+                        
+                        for media_type, media_list in media_arrays.items():
+                            for media_item in media_list:
+                                if isinstance(media_item, dict) and media_item.get('approval_status') == status:
+                                    item_id = media_item.get('item_id', 'unknown')
+                                    
+                                    queue_items.append({
+                                        'content_type': 'profile_media',
+                                        'content_id': item_id,
+                                        'user_id': user_id,
+                                        'user_name': user_name,
+                                        'status': media_item.get('approval_status'),
+                                        'submitted_at': media_item.get('submitted_at'),
+                                        'metadata': {
+                                            'media_type': media_type,
+                                            'submitted_by': media_item.get('submitted_by'),
+                                        },
+                                        'content_data': media_item
+                                    })
+                    
+                    elif ctype == 'vip_service':
+                        # Check services_offered array
+                        services = user_doc.get('services_offered', [])
+                        for service_item in services:
+                            if isinstance(service_item, dict) and service_item.get('approval_status') == status:
+                                item_id = service_item.get('item_id', 'unknown')
+                                
+                                queue_items.append({
+                                    'content_type': 'vip_service',
+                                    'content_id': item_id,
+                                    'user_id': user_id,
+                                    'user_name': user_name,
+                                    'status': service_item.get('approval_status'),
+                                    'submitted_at': service_item.get('submitted_at'),
+                                    'metadata': {
+                                        'submitted_by': service_item.get('submitted_by'),
+                                    },
+                                    'content_data': service_item
+                                })
         
         queue_items.sort(key=lambda x: x.get('submitted_at', datetime.min), reverse=True)
         
