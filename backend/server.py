@@ -855,7 +855,7 @@ async def get_me(user: Dict = Depends(get_current_user)):
             print(f"Auto-migrated user {user['username']} to profile_completed=True")
     
     return {
-        'id': user['_id'],
+        'id': str(user['_id']),  # Convert ObjectId to string for JSON serialization
         'username': user['username'],
         'email': user['email'],
         'user_type': user['user_type'],
