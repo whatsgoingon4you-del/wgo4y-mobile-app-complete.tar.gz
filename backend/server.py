@@ -579,10 +579,24 @@ def decode_token(token: str) -> Dict[str, Any]:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
+    from bson import ObjectId
     token = credentials.credentials
     payload = decode_token(token)
+    user_id = payload['user_id']
+    
     # Query by _id (the single source of truth)
-    user = await db.users.find_one({'_id': payload['user_id']})
+    # Handle both ObjectId and string UUID formats
+    try:
+        # Try as ObjectId first (for legacy MongoDB ObjectIds)
+        if len(user_id) == 24:  # ObjectId hex string length
+            user = await db.users.find_one({'_id': ObjectId(user_id)})
+        else:
+            # UUID string format
+            user = await db.users.find_one({'_id': user_id})
+    except:
+        # If ObjectId conversion fails, try as string
+        user = await db.users.find_one({'_id': user_id})
+    
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
