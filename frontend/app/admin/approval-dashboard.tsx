@@ -260,6 +260,26 @@ export default function ApprovalDashboard() {
   const renderContentCard = (item: QueueItem) => {
     const isSelected = selectedItems.has(item.content_id);
     const contentData = item.content_data || {};
+    
+    // Determine title based on content type
+    let title = 'Untitled';
+    let subtitle = '';
+    let description = '';
+    
+    if (item.content_type === 'profile_media') {
+      const mediaType = item.metadata?.media_type || 'media';
+      title = `${mediaType.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}`;
+      subtitle = `URL: ${contentData.url?.substring(0, 50)}...`;
+      description = `Media type: ${mediaType}`;
+    } else if (item.content_type === 'vip_service') {
+      title = contentData.service_name || 'VIP Service';
+      subtitle = `Price: $${contentData.price} (${contentData.price_type})`;
+      description = contentData.description || 'VIP service offering';
+    } else {
+      title = contentData.title || contentData.full_name || 'Untitled';
+      subtitle = contentData.location || '';
+      description = contentData.description || '';
+    }
 
     return (
       <View key={item.content_id} style={[styles.card, isSelected && styles.cardSelected]}>
@@ -279,7 +299,7 @@ export default function ApprovalDashboard() {
           <View style={styles.cardHeader}>
             <View style={styles.cardHeaderLeft}>
               <Text style={styles.cardTitle}>
-                {contentData.title || contentData.full_name || 'Untitled'}
+                {title}
               </Text>
               <View style={styles.statusBadgeContainer}>
                 <View
@@ -306,6 +326,11 @@ export default function ApprovalDashboard() {
                 <Ionicons name="person" size={14} color="#666" /> {item.user_name}
               </Text>
             )}
+            {subtitle && (
+              <Text style={styles.detailText}>
+                {subtitle}
+              </Text>
+            )}
             {contentData.date && (
               <Text style={styles.detailText}>
                 <Ionicons name="calendar" size={14} color="#666" />{' '}
@@ -317,14 +342,19 @@ export default function ApprovalDashboard() {
                 <Ionicons name="location" size={14} color="#666" /> {contentData.location}
               </Text>
             )}
-            {contentData.description && (
+            {description && (
               <Text style={styles.description} numberOfLines={2}>
-                {contentData.description}
+                {description}
               </Text>
             )}
             <Text style={styles.submittedText}>
               Submitted: {new Date(item.submitted_at).toLocaleString()}
             </Text>
+            {item.metadata?.rejection_reason && (
+              <Text style={styles.rejectionReason}>
+                Rejection reason: {item.metadata.rejection_reason}
+              </Text>
+            )}
           </View>
 
           {/* Action Buttons */}
