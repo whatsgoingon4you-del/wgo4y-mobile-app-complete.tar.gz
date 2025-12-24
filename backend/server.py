@@ -1250,7 +1250,12 @@ async def update_profile(profile_data: UserProfileUpdate, user: Dict = Depends(g
     if profile_data.services is not None:
         update_dict['services'] = profile_data.services  # Store occupations in 'services' field
     if profile_data.services_offered is not None:
-        update_dict['services_offered'] = profile_data.services_offered
+        # VIP Services need approval - add metadata to each
+        update_dict['services_offered'] = add_approval_metadata_to_items(
+            profile_data.services_offered,
+            str(user['_id']),
+            'vip_service'
+        )
     if profile_data.locations_served is not None:
         update_dict['locations_served'] = profile_data.locations_served
     if profile_data.years_experience is not None:
