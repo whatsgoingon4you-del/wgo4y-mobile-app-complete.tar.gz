@@ -5889,18 +5889,31 @@ async def migrate_production_data(secret_key: str):
 
 # ============= MIDDLEWARE & FINAL ROUTER SETUP =============
 
-# CORS Configuration - Explicit allowlist for security
-# Add your production domain here when deploying
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Local development
-    "https://wgo4y.vercel.app",  # Production frontend
-    "https://venue-job-portal-2ub46.ondigitalocean.app",  # Deployed app
-]
+# CORS Configuration - Read from environment variable
+# If CORS_ORIGINS is set to "*", allow all origins (for development/testing)
+# Otherwise, use the comma-separated list of allowed origins
+CORS_ORIGINS_ENV = os.environ.get('CORS_ORIGINS', '')
+
+if CORS_ORIGINS_ENV == '*':
+    # Allow all origins (use with caution in production)
+    ALLOWED_ORIGINS = ["*"]
+elif CORS_ORIGINS_ENV:
+    # Split comma-separated list
+    ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ORIGINS_ENV.split(',')]
+else:
+    # Fallback to explicit allowlist
+    ALLOWED_ORIGINS = [
+        "http://localhost:3000",  # Local development
+        "https://wgo4y.vercel.app",  # Production frontend
+        "https://venue-job-portal-2ub46.ondigitalocean.app",  # Deployed app
+    ]
+
+print(f"🔒 CORS Configuration: {ALLOWED_ORIGINS}")
 
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=ALLOWED_ORIGINS,  # Explicit allowlist instead of ["*"]
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
