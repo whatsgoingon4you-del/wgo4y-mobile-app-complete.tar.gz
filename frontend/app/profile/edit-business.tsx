@@ -981,17 +981,37 @@ export default function EditBusinessProfile() {
           console.error('❌ Validation errors:', JSON.stringify(detail, null, 2));
           
           // Format validation errors into readable message
-          errorMsg = 'Validation errors:\n' + detail.map((err: any) => {
-            const field = err.loc ? err.loc.join('.') : 'unknown';
-            const message = err.msg || 'Invalid value';
-            return `• ${field}: ${message}`;
-          }).join('\n');
+          const errorLines = detail.map((err: any) => {
+            try {
+              // Handle loc which can be an array like ["body", "field_name", 0]
+              let field = 'unknown';
+              if (err.loc && Array.isArray(err.loc)) {
+                field = err.loc.join('.');
+              } else if (err.loc) {
+                field = String(err.loc);
+              }
+              
+              const message = err.msg || err.message || 'Invalid value';
+              const type = err.type ? ` (${err.type})` : '';
+              
+              return `• ${field}: ${message}${type}`;
+            } catch (parseError) {
+              console.error('Error parsing validation error:', parseError);
+              return `• Error: ${JSON.stringify(err)}`;
+            }
+          });
+          
+          errorMsg = 'Validation errors:\n\n' + errorLines.join('\n');
         } else if (typeof detail === 'string') {
           errorMsg = detail;
+        } else if (typeof detail === 'object') {
+          errorMsg = 'Validation error: ' + JSON.stringify(detail, null, 2);
         } else {
-          errorMsg = JSON.stringify(detail);
+          errorMsg = String(detail);
         }
       }
+      
+      console.error('❌ Final error message:', errorMsg);
       
       if (Platform.OS === 'web') {
         alert('Error: ' + errorMsg);
