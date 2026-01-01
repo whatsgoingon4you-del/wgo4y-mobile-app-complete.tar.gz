@@ -345,7 +345,19 @@ export default function EditBusinessProfile() {
       // Business Description & Media
       setBusinessDescription(profile.business_description || '');
       setBusinessLogo(profile.business_logo);
-      setBusinessPhotos(profile.business_photos || []);
+      
+      // Handle business_photos - can be array of strings OR array of approval objects
+      const photos = profile.business_photos || [];
+      const photoUrls = photos.map((photo: any) => {
+        // If it's an approval object with approval metadata
+        if (typeof photo === 'object' && photo.url) {
+          return photo.url;
+        }
+        // If it's a plain string URL
+        return photo;
+      }).filter(Boolean); // Remove any null/undefined values
+      
+      setBusinessPhotos(photoUrls);
 
       // Address
       if (profile.business_address) {
