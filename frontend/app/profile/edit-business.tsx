@@ -1363,16 +1363,34 @@ export default function EditBusinessProfile() {
                 {businessPhotos.map((photo, index) => {
                   // Ensure photo has proper format (base64 needs data URI prefix)
                   let photoUri = photo;
+                  
+                  console.log(`🖼️ Rendering photo ${index}:`, photo?.substring(0, 50));
+                  
                   if (photo && !photo.startsWith('http') && !photo.startsWith('data:')) {
                     // Assume it's base64 without prefix
                     photoUri = `data:image/jpeg;base64,${photo}`;
+                    console.log(`🖼️ Added data URI prefix to photo ${index}`);
                   }
+                  
+                  console.log(`🖼️ Final photoUri for ${index}:`, photoUri?.substring(0, 100));
                   
                   return (
                     <View key={index} style={styles.photoItem}>
-                      <Image source={{ uri: photoUri }} style={styles.businessPhoto} />
+                      <Image 
+                        source={{ uri: photoUri }} 
+                        style={styles.businessPhoto}
+                        onError={(error) => {
+                          console.error(`❌ Image ${index} failed to load:`, error.nativeEvent);
+                        }}
+                        onLoad={() => {
+                          console.log(`✅ Image ${index} loaded successfully`);
+                        }}
+                      />
                       <TouchableOpacity 
-                        onPress={() => removePhoto(index)}
+                        onPress={() => {
+                          console.log(`🗑️ Delete button clicked for photo ${index}`);
+                          removePhoto(index);
+                        }}
                         style={styles.removePhotoButton}
                       >
                         <Ionicons name="close-circle" size={24} color="#ff3b30" />
