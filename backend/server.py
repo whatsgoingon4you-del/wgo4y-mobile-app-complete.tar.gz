@@ -169,6 +169,37 @@ class UserProfileUpdate(BaseModel):
     portfolio_videos: Optional[List[dict]] = None  # Video links with metadata
     music_tracks: Optional[List[dict]] = None  # Music platform links (SoundCloud, Spotify, etc.)
     rate_structure: Optional[str] = None
+    
+    @field_validator('business_photos', 'portfolio_photos', 'services_offered', mode='before')
+    @classmethod
+    def extract_urls_from_approval_objects(cls, v):
+        """
+        Preprocess photo/service fields to extract URLs from approval objects.
+        This validator runs BEFORE Pydantic validation, converting objects to strings.
+        
+        Handles both:
+        - String URLs (direct from frontend on first save)
+        - Approval objects with {url: ..., approval_status: ...} (from DB on subsequent saves)
+        """
+        if v is None:
+            return v
+        
+        if not isinstance(v, list):
+            return v
+        
+        processed = []
+        for item in v:
+            # If it's an approval object, extract the URL
+            if isinstance(item, dict) and 'url' in item:
+                # Only include if URL is valid (not None/empty)
+                if item['url']:
+                    processed.append(item['url'])
+            # If it's already a string, use it directly
+            elif isinstance(item, str) and item:
+                processed.append(item)
+            # Skip invalid items (None, empty, etc.)
+        
+        return processed
 
 class UserLogin(BaseModel):
     username: str
