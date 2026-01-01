@@ -207,14 +207,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await AsyncStorage.setItem('auth_token', newToken);
       await AsyncStorage.setItem('user', JSON.stringify(minimalUser));
       
-      // Also use localStorage for web
+      // Also use safe localStorage for web
       if (Platform.OS === 'web') {
-        try {
-          localStorage.setItem('auth_token', newToken);
-          localStorage.setItem('user', JSON.stringify(newUser));
-          console.log('💾 AuthContext: Also stored in localStorage for web');
-        } catch (e) {
-          console.warn('localStorage not available:', e);
+        const tokenStored = safeLocalStorageSet('auth_token', newToken);
+        const userStored = safeLocalStorageSet('user', JSON.stringify(minimalUser));
+        
+        if (tokenStored && userStored) {
+          console.log('💾 AuthContext: Successfully stored in localStorage for web');
+        } else {
+          console.warn('⚠️ localStorage storage failed - continuing without persistence');
         }
       }
       
