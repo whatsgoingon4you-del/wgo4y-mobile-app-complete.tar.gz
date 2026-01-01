@@ -867,13 +867,51 @@ export default function EditBusinessProfile() {
 
       console.log('✅ API response received:', response.status);
 
-      // Update AsyncStorage
+      // Update AsyncStorage with minimal user data (exclude large base64 fields)
       const userData = await AsyncStorage.getItem('user');
       if (userData) {
         const user = JSON.parse(userData);
-        const updatedUser = { ...user, ...response.data };
-        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-        console.log('💾 Updated user data in storage');
+        // Strip large fields from response before storing
+        const { 
+          business_photos, 
+          business_logo,
+          portfolio_photos,
+          portfolio_videos,
+          profile_photo,
+          ...minimalUpdate 
+        } = response.data;
+        
+        const updatedUser = { ...user, ...minimalUpdate };
+        
+        try {
+          await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+          console.log('💾 Updated minimal user data in storage');
+          
+          // Also update localStorage for web with error handling
+          if (Platform.OS === 'web') {
+            try {
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+            } catch (storageError: any) {
+              if (storageError.name === 'QuotaExceededError') {
+                console.warn('⚠️ localStorage quota exceeded - clearing old data');
+                // Clear onboarding progress to free up space
+                localStorage.removeItem('business_step3_progress');
+                localStorage.removeItem('onboarding_step2_progress');
+                localStorage.removeItem('entrepreneur_step1_progress');
+                try {
+                  localStorage.setItem('user', JSON.stringify(updatedUser));
+                  console.log('💾 Retry successful after cleanup');
+                } catch (retryError) {
+                  console.error('❌ Still quota exceeded after cleanup');
+                  // Continue anyway - user is logged in, just not persisted
+                }
+              }
+            }
+          }
+        } catch (storageError) {
+          console.error('❌ Error storing user data:', storageError);
+          // Continue anyway - profile was saved on server
+        }
       }
 
       console.log('✅ Business profile saved successfully');
