@@ -143,7 +143,7 @@ class UserProfileUpdate(BaseModel):
     business_hours: Optional[dict] = None
     business_description: Optional[str] = None
     business_logo: Optional[str] = None
-    business_photos: Optional[Union[List[str], List[dict]]] = None  # Accept both formats (strings OR approval objects)
+    business_photos: Optional[List[Any]] = None  # Accept any format - will be processed server-side
     capacity: Optional[int] = None
     amenities: Optional[List[str]] = None
     entertainment_categories: Optional[List[str]] = None
@@ -161,11 +161,11 @@ class UserProfileUpdate(BaseModel):
     service_name: Optional[str] = None
     occupations: Optional[List[str]] = None  # Professional identity: DJ, Band, etc.
     services: Optional[List[str]] = None  # Alias for occupations (backward compatibility)
-    services_offered: Optional[List[dict]] = None  # Detailed services with pricing: [{service_name, price, price_type}]
+    services_offered: Optional[List[Any]] = None  # Accept any format - will be processed server-side
     profile_completed: Optional[bool] = None  # Track if profile is fully set up
     locations_served: Optional[List[str]] = None
     years_experience: Optional[int] = None
-    portfolio_photos: Optional[Union[List[str], List[dict]]] = None  # Accept both formats (strings OR approval objects)
+    portfolio_photos: Optional[List[Any]] = None  # Accept any format - will be processed server-side
     portfolio_videos: Optional[List[dict]] = None  # Video links with metadata
     music_tracks: Optional[List[dict]] = None  # Music platform links (SoundCloud, Spotify, etc.)
     rate_structure: Optional[str] = None
