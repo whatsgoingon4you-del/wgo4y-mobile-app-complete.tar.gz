@@ -628,34 +628,44 @@ export default function EditBusinessProfile() {
   };
 
   const removePhoto = (index: number) => {
-    Alert.alert('Remove Photo', 'Remove this photo?', [
-      { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Remove', 
-        style: 'destructive', 
-        onPress: () => {
-          const updatedPhotos = businessPhotos.filter((_, i) => i !== index);
-          setBusinessPhotos(updatedPhotos);
-          
-          // Update limit states after removal
-          if (typeof photoLimit === 'number' && photoLimit < 999) {
-            // If we were at limit, we can now add photos
-            if (updatedPhotos.length < photoLimit) {
-              setCanAddPhoto(true);
-            }
-            
-            // Update near-limit warning
-            if (photoLimit - updatedPhotos.length <= 2 && updatedPhotos.length < photoLimit) {
-              setNearPhotoLimit(true);
-            } else {
-              setNearPhotoLimit(false);
-            }
-          }
-          
-          console.log(`📸 Photo removed. New count: ${updatedPhotos.length}/${photoLimit}`);
+    // Use confirm dialog for web, Alert for mobile
+    const confirmRemove = () => {
+      const updatedPhotos = businessPhotos.filter((_, i) => i !== index);
+      setBusinessPhotos(updatedPhotos);
+      
+      // Update limit states after removal
+      if (typeof photoLimit === 'number' && photoLimit < 999) {
+        // If we were at limit, we can now add photos
+        if (updatedPhotos.length < photoLimit) {
+          setCanAddPhoto(true);
+        }
+        
+        // Update near-limit warning
+        if (photoLimit - updatedPhotos.length <= 2 && updatedPhotos.length < photoLimit) {
+          setNearPhotoLimit(true);
+        } else {
+          setNearPhotoLimit(false);
         }
       }
-    ]);
+      
+      console.log(`📸 Photo removed. New count: ${updatedPhotos.length}/${photoLimit}`);
+    };
+    
+    // Different confirmation for web vs mobile
+    if (Platform.OS === 'web') {
+      if (window.confirm('Remove this photo?')) {
+        confirmRemove();
+      }
+    } else {
+      Alert.alert('Remove Photo', 'Remove this photo?', [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Remove', 
+          style: 'destructive', 
+          onPress: confirmRemove
+        }
+      ]);
+    }
   };
 
   // Portfolio Video Handlers
