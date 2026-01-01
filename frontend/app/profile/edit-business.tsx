@@ -1335,17 +1335,26 @@ export default function EditBusinessProfile() {
                 {membershipTier === 'basic' && ' (Upgrade to Silver for 15 photos or Gold for unlimited)'}
               </Text>
               <View style={styles.photosGrid}>
-                {businessPhotos.map((photo, index) => (
-                  <View key={index} style={styles.photoItem}>
-                    <Image source={{ uri: photo }} style={styles.businessPhoto} />
-                    <TouchableOpacity 
-                      onPress={() => removePhoto(index)}
-                      style={styles.removePhotoButton}
-                    >
-                      <Ionicons name="close-circle" size={24} color="#ff3b30" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
+                {businessPhotos.map((photo, index) => {
+                  // Ensure photo has proper format (base64 needs data URI prefix)
+                  let photoUri = photo;
+                  if (photo && !photo.startsWith('http') && !photo.startsWith('data:')) {
+                    // Assume it's base64 without prefix
+                    photoUri = `data:image/jpeg;base64,${photo}`;
+                  }
+                  
+                  return (
+                    <View key={index} style={styles.photoItem}>
+                      <Image source={{ uri: photoUri }} style={styles.businessPhoto} />
+                      <TouchableOpacity 
+                        onPress={() => removePhoto(index)}
+                        style={styles.removePhotoButton}
+                      >
+                        <Ionicons name="close-circle" size={24} color="#ff3b30" />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
                 {/* Show add button only if under limit */}
                 {canAddPhoto && (
                   <TouchableOpacity onPress={addPhoto} style={styles.addPhotoButton}>
