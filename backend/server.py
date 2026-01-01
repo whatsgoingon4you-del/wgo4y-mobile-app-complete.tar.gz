@@ -74,6 +74,16 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
 
+# Custom validation error handler for better debugging
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    print(f"❌ Validation Error on {request.method} {request.url.path}")
+    print(f"❌ Validation details: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
+
 # ============= MODELS =============
 
 class VideoLink(BaseModel):
