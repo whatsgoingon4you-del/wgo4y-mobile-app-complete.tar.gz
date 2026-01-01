@@ -119,7 +119,7 @@ class UserProfileUpdate(BaseModel):
     entrepreneur_categories: Optional[List[str]] = None
     selected_categories: Optional[List[str]] = None  # Category IDs selected during onboarding (entrepreneur/business)
     venue_preferences: Optional[List[str]] = None  # For general public
-    service_preferences: Optional[List[str]] = None  # For general public
+    service_preferences: Optional[List[str] = None  # For general public
     entertainment_preferences: Optional[List[str]] = None  # Entertainment category preferences for all users
     membership_tier: Optional[str] = None  # For tier updates during onboarding
     
@@ -131,7 +131,7 @@ class UserProfileUpdate(BaseModel):
     business_hours: Optional[dict] = None
     business_description: Optional[str] = None
     business_logo: Optional[str] = None
-    business_photos: Optional[List[str]] = None
+    business_photos: Optional[Union[List[str], List[dict]]] = None  # Accept both formats (strings OR approval objects)
     capacity: Optional[int] = None
     amenities: Optional[List[str]] = None
     entertainment_categories: Optional[List[str]] = None
@@ -153,7 +153,7 @@ class UserProfileUpdate(BaseModel):
     profile_completed: Optional[bool] = None  # Track if profile is fully set up
     locations_served: Optional[List[str]] = None
     years_experience: Optional[int] = None
-    portfolio_photos: Optional[List[str]] = None
+    portfolio_photos: Optional[Union[List[str], List[dict]]] = None  # Accept both formats (strings OR approval objects)
     portfolio_videos: Optional[List[dict]] = None  # Video links with metadata
     music_tracks: Optional[List[dict]] = None  # Music platform links (SoundCloud, Spotify, etc.)
     rate_structure: Optional[str] = None
