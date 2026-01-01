@@ -933,7 +933,28 @@ export default function EditBusinessProfile() {
       console.error('❌ Error details:', error.response?.data);
       console.error('❌ Error status:', error.response?.status);
       
-      const errorMsg = error.response?.data?.detail || 'Failed to update profile';
+      // Format error message for display
+      let errorMsg = 'Failed to update profile';
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        
+        // Check if detail is an array of validation errors
+        if (Array.isArray(detail)) {
+          console.error('❌ Validation errors:', JSON.stringify(detail, null, 2));
+          
+          // Format validation errors into readable message
+          errorMsg = 'Validation errors:\n' + detail.map((err: any) => {
+            const field = err.loc ? err.loc.join('.') : 'unknown';
+            const message = err.msg || 'Invalid value';
+            return `• ${field}: ${message}`;
+          }).join('\n');
+        } else if (typeof detail === 'string') {
+          errorMsg = detail;
+        } else {
+          errorMsg = JSON.stringify(detail);
+        }
+      }
       
       if (Platform.OS === 'web') {
         alert('Error: ' + errorMsg);
