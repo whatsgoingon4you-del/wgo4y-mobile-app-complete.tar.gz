@@ -367,10 +367,20 @@ export default function EditBusinessProfile() {
         
         console.warn(`📸 Photo ${index} unexpected format:`, photo);
         return null;
-      }).filter(Boolean); // Remove any null/undefined values
+      }).filter((url): url is string => {
+        // Filter out invalid URLs (null, undefined, empty string)
+        if (!url || typeof url !== 'string' || url.trim() === '') {
+          console.warn('📸 Filtering out invalid photo URL:', url);
+          return false;
+        }
+        return true;
+      });
       
       console.log('📸 Processed photoUrls count:', photoUrls.length);
-      console.log('📸 First photoUrl sample:', photoUrls[0]?.substring(0, 100));
+      console.log('📸 Valid photos after filtering:', photoUrls.length);
+      if (photoUrls.length > 0) {
+        console.log('📸 First photoUrl sample:', photoUrls[0]?.substring(0, 100));
+      }
       
       setBusinessPhotos(photoUrls);
 
