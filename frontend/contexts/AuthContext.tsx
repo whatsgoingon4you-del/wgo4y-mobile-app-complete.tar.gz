@@ -25,6 +25,48 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper: Strip large base64 fields from user object before storing in localStorage
+// Prevents QuotaExceededError (localStorage has 5-10MB limit)
+const stripLargeFieldsFromUser = (user: any): any => {
+  if (!user) return null;
+  
+  const { 
+    profile_photo, 
+    business_logo,
+    business_photos, 
+    portfolio_photos, 
+    portfolio_videos,
+    ...minimalUser 
+  } = user;
+  
+  return minimalUser;
+};
+
+// Helper: Safely store in localStorage with error handling
+const safeLocalStorageSet = (key: string, value: string): boolean => {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error: any) {
+    if (error.name === 'QuotaExceededError') {
+      console.error('❌ localStorage quota exceeded. Clearing old data and retrying...');
+      // Try to clear some space
+      try {
+        localStorage.removeItem('onboarding_step2_progress');
+        localStorage.removeItem('business_step3_progress');
+        localStorage.removeItem('entrepreneur_step1_progress');
+        localStorage.setItem(key, value);
+        return true;
+      } catch (retryError) {
+        console.error('❌ Still quota exceeded after cleanup:', retryError);
+        return false;
+      }
+    }
+    console.error('❌ localStorage error:', error);
+    return false;
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -60,7 +102,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       const updatedUser = response.data;
       setUser(updatedUser);
-      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // Store minimal user data (exclude large base64 fields)
+      const minimalUser = stripLargeFieldsFromUser(updatedUser);
+      await AsyncStorage.setItem('user', JSON.stringify(minimalUser));
+      
+      // Also update localStorage for web
+      if (Platform.OS === 'web') {
+        safeLocalStorageSet('user', JSON.stringify(minimalUser));
+      }
     } catch (error) {
       console.error('Error refreshing user:', error);
     }
@@ -81,20 +131,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('✅ AuthContext: Login API successful, received token and user');
       console.log('👤 User data:', newUser);
       
+      // Store minimal user data (exclude large base64 fields to prevent QuotaExceededError)
+      const minimalUser = stripLargeFieldsFromUser(newUser);
+      
       // Store in AsyncStorage
       await AsyncStorage.setItem('auth_token', newToken);
-      await AsyncStorage.setItem('user', JSON.stringify(newUser));
+      await AsyncStorage.setItem('user', JSON.stringify(minimalUser));
       
-      console.log('💾 AuthContext: Stored token and user in AsyncStorage');
+      console.log('💾 AuthContext: Stored token and minimal user in AsyncStorage');
       
-      // Also store in localStorage for web (better compatibility)
+      // Also store in localStorage for web with error handling
       if (Platform.OS === 'web') {
-        try {
-          localStorage.setItem('auth_token', newToken);
-          localStorage.setItem('user', JSON.stringify(newUser));
-          console.log('💾 AuthContext: Also stored in localStorage for web');
-        } catch (e) {
-          console.warn('localStorage not available:', e);
+        const tokenStored = safeLocalStorageSet('auth_token', newToken);
+        const userStored = safeLocalStorageSet('user', JSON.stringify(minimalUser));
+        
+        if (tokenStored && userStored) {
+          console.log('💾 AuthContext: Successfully stored in localStorage for web');
+        } else {
+          console.warn('⚠️ localStorage storage failed - continuing without persistence');
         }
       }
       
@@ -146,8 +200,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await AsyncStorage.removeItem('general_step2_progress');
       await AsyncStorage.removeItem('general_step3_progress');
       
+      // Store minimal user data (exclude large base64 fields)
+      const minimalUser = stripLargeFieldsFromUser(newUser);
+      
       await AsyncStorage.setItem('auth_token', newToken);
-      await AsyncStorage.setItem('user', JSON.stringify(newUser));
+      await AsyncStorage.setItem('user', JSON.stringify(minimalUser));
       
       // Also use localStorage for web
       if (Platform.OS === 'web') {
