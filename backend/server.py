@@ -131,7 +131,7 @@ class UserProfileUpdate(BaseModel):
     entrepreneur_categories: Optional[List[str]] = None
     selected_categories: Optional[List[str]] = None  # Category IDs selected during onboarding (entrepreneur/business)
     venue_preferences: Optional[List[str]] = None  # For general public
-    service_preferences: Optional[List[str] = None  # For general public
+    service_preferences: Optional[List[str]] = None  # For general public
     entertainment_preferences: Optional[List[str]] = None  # Entertainment category preferences for all users
     membership_tier: Optional[str] = None  # For tier updates during onboarding
     
