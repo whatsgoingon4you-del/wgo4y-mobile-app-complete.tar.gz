@@ -37,7 +37,7 @@ if (typeof window !== 'undefined') {
 
 **Status:** ✅ PERFECT for production
 - Automatically uses correct domain (no hardcoded URLs)
-- Works on preview: `https://yourapp.preview.emergentagent.com`
+- Works on preview: `https://profile-fixer-4.preview.emergentagent.com`
 - Works on production: `https://yourapp.emergent.host`
 - Works on custom domain: `https://whatsgoingon4you.com`
 

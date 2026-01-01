@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 # Backend URL from environment
-BACKEND_URL = "https://modqueue-dash.preview.emergentagent.com/api"
+BACKEND_URL = "https://profile-fixer-4.preview.emergentagent.com/api"
 
 # Test data
 timestamp = int(time.time())

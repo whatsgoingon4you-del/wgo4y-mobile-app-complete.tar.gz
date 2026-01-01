@@ -3,7 +3,7 @@
 
 Status: The platform is ready for broader testing in the preview environment; it is not ready for production until the MUST-FIX items are resolved and verified.
 
-Preview URL: https://modqueue-dash.preview.emergentagent.com
+Preview URL: https://profile-fixer-4.preview.emergentagent.com
 
 Admin workflow: Login as Club Euphoria (admin) → /admin/edit-entrepreneur → click “Login as User” to impersonate and edit profiles.
 
@@ -185,7 +185,7 @@ Search/filter for “localhost” → must be ZERO requests
 
 Confirm /api/profile and /api/profile/tier-limits hit the preview domain and load successfully
 
-Acceptance: All API calls go to https://modqueue-dash.preview.emergentagent.com with no ERR_CONNECTION_REFUSED.
+Acceptance: All API calls go to https://profile-fixer-4.preview.emergentagent.com with no ERR_CONNECTION_REFUSED.
 
 Root cause: API_URL/baseURL is defined in many frontend files (fragile).
 
