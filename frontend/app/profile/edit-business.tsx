@@ -348,14 +348,29 @@ export default function EditBusinessProfile() {
       
       // Handle business_photos - can be array of strings OR array of approval objects
       const photos = profile.business_photos || [];
-      const photoUrls = photos.map((photo: any) => {
+      console.log('📸 Raw business_photos from API:', photos);
+      console.log('📸 business_photos type:', typeof photos, 'is array:', Array.isArray(photos));
+      
+      const photoUrls = photos.map((photo: any, index: number) => {
+        console.log(`📸 Photo ${index}:`, typeof photo, photo);
+        
         // If it's an approval object with approval metadata
-        if (typeof photo === 'object' && photo.url) {
+        if (typeof photo === 'object' && photo !== null && photo.url) {
+          console.log(`📸 Photo ${index} is approval object, extracting URL:`, photo.url?.substring(0, 50));
           return photo.url;
         }
         // If it's a plain string URL
-        return photo;
+        if (typeof photo === 'string') {
+          console.log(`📸 Photo ${index} is string:`, photo.substring(0, 50));
+          return photo;
+        }
+        
+        console.warn(`📸 Photo ${index} unexpected format:`, photo);
+        return null;
       }).filter(Boolean); // Remove any null/undefined values
+      
+      console.log('📸 Processed photoUrls count:', photoUrls.length);
+      console.log('📸 First photoUrl sample:', photoUrls[0]?.substring(0, 100));
       
       setBusinessPhotos(photoUrls);
 
