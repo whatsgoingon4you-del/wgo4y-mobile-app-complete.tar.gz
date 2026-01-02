@@ -142,8 +142,8 @@ export default function CreateRaffleScreen() {
         Alert.alert('Success', 'Raffle created successfully!');
       }
       
-      // Navigate to my-raffles
-      router.replace('/my-raffles');
+      // Navigate to raffles list
+      router.replace('/raffles');
     } catch (error: any) {
       console.error('Error creating raffle:', error);
       const errorMsg = error.response?.data?.detail || 'Failed to create raffle';
@@ -164,7 +164,7 @@ export default function CreateRaffleScreen() {
         style={{ flex: 1 }}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.replace('/my-raffles')} style={styles.backButton}>
+          <TouchableOpacity onPress={() => router.replace('/raffles')} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Create Raffle</Text>
