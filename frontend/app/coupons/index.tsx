@@ -374,7 +374,16 @@ export default function CouponsPage() {
           {(userType === 'business' || userType === 'entrepreneur') ? 'My Coupons' : 'Coupons'}
         </Text>
         {(userType === 'business' || userType === 'entrepreneur') ? (
-          <TouchableOpacity onPress={() => router.push('/coupons/create')} style={styles.createButton}>
+          <TouchableOpacity 
+            onPress={() => {
+              console.log('🎫 CREATE COUPON BUTTON CLICKED');
+              console.log('🎫 User type:', userType);
+              console.log('🎫 Navigating to /coupons/create');
+              router.push('/coupons/create');
+              console.log('🎫 Navigation command sent');
+            }} 
+            style={styles.createButton}
+          >
             <Ionicons name="add-circle" size={28} color="#4CAF50" />
           </TouchableOpacity>
         ) : (
