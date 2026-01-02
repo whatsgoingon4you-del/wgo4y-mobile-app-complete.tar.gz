@@ -2,14 +2,18 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-// Enable source maps for production builds
+// Completely disable minification for debugging
 config.transformer = {
   ...config.transformer,
+  minifierPath: require.resolve('metro-minify-terser'),
   minifierConfig: {
     ...config.transformer?.minifierConfig,
-    keep_classnames: true,
-    keep_fnames: true,
+    compress: false,
     mangle: false,
+    output: {
+      comments: true,
+      beautify: true,
+    },
   },
 };
 
