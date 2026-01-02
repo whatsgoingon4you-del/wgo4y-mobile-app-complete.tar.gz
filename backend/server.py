@@ -649,6 +649,36 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     
     return user
 
+async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))) -> Optional[Dict[str, Any]]:
+    """Optional authentication - returns user if authenticated, None otherwise"""
+    if not credentials:
+        return None
+    
+    try:
+        from bson import ObjectId
+        token = credentials.credentials
+        payload = decode_token(token)
+        user_id = payload['user_id']
+        
+        # Query by _id
+        try:
+            if len(user_id) == 24:
+                user = await db.users.find_one({'_id': ObjectId(user_id)})
+            else:
+                user = await db.users.find_one({'_id': user_id})
+        except:
+            user = await db.users.find_one({'_id': user_id})
+        
+        if not user:
+            return None
+        
+        if "id" not in user:
+            user["id"] = str(user["_id"])
+        
+        return user
+    except:
+        return None
+
 # ============= APPROVAL HELPER FUNCTIONS =============
 
 def add_approval_metadata_to_items(items: list, user_id: str, item_type: str) -> list:
