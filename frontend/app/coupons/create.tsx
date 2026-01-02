@@ -36,12 +36,6 @@ export default function CreateCouponScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   
-  // Log when component mounts
-  useEffect(() => {
-    console.log('🎫 CREATE COUPON SCREEN MOUNTED');
-    console.log('🎫 Component loaded successfully');
-  }, []);
-  
   // Basic fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
