@@ -15,7 +15,10 @@ export default function Index() {
         checkOnboardingStatus();
       } else {
         // Not authenticated, show welcome screen
-        router.replace('/welcome');
+        // Only redirect if not already there
+        if (typeof window !== 'undefined' && window.location.pathname !== '/welcome') {
+          router.replace('/welcome');
+        }
       }
     }
   }, [loading, user]);
