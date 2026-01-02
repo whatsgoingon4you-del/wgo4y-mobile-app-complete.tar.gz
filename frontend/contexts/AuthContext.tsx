@@ -79,23 +79,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const loadStoredAuth = async () => {
-    try {
-      const storedToken = await AsyncStorage.getItem('auth_token');
-      const storedUser = await AsyncStorage.getItem('user');
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        // Refresh user data to get latest profile_completed status
-        await refreshUserData(storedToken);
-      }
-    } catch (error) {
-      console.error('Error loading auth:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const refreshUserData = async (authToken: string) => {
     try {
       const response = await axios.get(`${API_URL}/api/auth/me`, {
