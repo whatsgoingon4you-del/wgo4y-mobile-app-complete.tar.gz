@@ -1595,13 +1595,26 @@ async def get_my_events(user: Dict = Depends(get_current_user), status: Optional
     return [{**event, 'id': event['_id']} for event in events]
 
 @api_router.get("/events/{event_id}")
-async def get_event(event_id: str):
+async def get_event(event_id: str, user: Optional[Dict] = Depends(get_optional_user)):
+    # Try to find approved event first (public view)
     event = await db.events.find_one({
         '_id': event_id,
         'approval_status': 'approved'
     })
+    
+    # If not found and user is authenticated, check if they're the creator
+    if not event and user:
+        event = await db.events.find_one({
+            '_id': event_id,
+            'created_by': str(user['_id'])  # Allow creator to view their own pending events
+        })
+        
+        # Add flag to indicate this is a pending event
+        if event and event.get('approval_status') != 'approved':
+            event['_is_pending_view'] = True
+    
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found or pending approval")
+        raise HTTPException(status_code=404, detail="Event not found")
     
     # Calculate capacity info
     capacity = event.get('capacity', 100)
