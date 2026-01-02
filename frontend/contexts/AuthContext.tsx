@@ -71,13 +71,7 @@ const safeLocalStorageSet = (key: string, value: string): boolean => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Auto-login disabled for easier testing
-    // Users will need to manually log in each session
-    setLoading(false);
-  }, []);
+  const [loading, setLoading] = useState(false); // Initialize to false directly, no useEffect needed
 
   const refreshUserData = async (authToken: string) => {
     try {
