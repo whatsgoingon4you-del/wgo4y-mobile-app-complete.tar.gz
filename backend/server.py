@@ -3498,8 +3498,15 @@ async def create_job(
     job_dict['owner_name'] = user.get('business_name') or user.get('full_name') or user.get('username')
     job_dict['owner_type'] = user.get('user_type')
     job_dict['status'] = 'open'
-    job_dict['created_at'] = datetime.utcnow()
-    job_dict['updated_at'] = datetime.utcnow()
+
+# Admin approval gate for public Job Board
+job_dict['approval_status'] = 'pending'  # pending, approved, rejected
+job_dict['approved_at'] = None
+job_dict['approved_by'] = None
+
+job_dict['created_at'] = datetime.utcnow()
+job_dict['updated_at'] = datetime.utcnow()
+
     
     await db.job_postings.insert_one(job_dict)
     
@@ -3528,8 +3535,9 @@ async def get_jobs(
     })
     
     if worker_profile:
-        # Worker view: show all open jobs
-        query['status'] = 'open'
+    # Worker view: show only open + admin-approved jobs
+    query['status'] = 'open'
+    query['approval_status'] = 'approved'
     elif user.get('user_type') in ['business', 'entrepreneur']:
         # Business/Entrepreneur view: show their own jobs (any status)
         require_premium_tier(user, "Job Board")
@@ -3559,6 +3567,59 @@ async def get_jobs(
         })
     
     return enriched
+
+class JobApprovalUpdate(BaseModel):
+    approved: bool = True
+
+@api_router.get("/admin/jobs/pending")
+async def admin_get_pending_jobs(user: Dict = Depends(get_current_user)):
+    """Get all pending job postings (Admin only)"""
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    jobs = await db.job_postings.find({'approval_status': 'pending'}).sort('created_at', -1).to_list(1000)
+
+    enriched = []
+    for job in jobs:
+        app_count = await db.job_applications.count_documents({'job_id': job['_id']})
+        enriched.append({
+            **job,
+            'id': job['_id'],
+            'application_count': app_count
+        })
+
+    return enriched
+
+@api_router.post("/admin/jobs/{job_id}/approve")
+async def admin_approve_job(job_id: str, update: JobApprovalUpdate, user: Dict = Depends(get_current_user)):
+    """Approve or reject a job posting (Admin only)"""
+    if not user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    job = await db.job_postings.find_one({'_id': job_id})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if update.approved:
+        new_status = 'approved'
+        approved_at = datetime.utcnow()
+        approved_by = user['_id']
+    else:
+        new_status = 'rejected'
+        approved_at = datetime.utcnow()
+        approved_by = user['_id']
+
+    await db.job_postings.update_one(
+        {'_id': job_id},
+        {'$set': {
+            'approval_status': new_status,
+            'approved_at': approved_at,
+            'approved_by': approved_by,
+            'updated_at': datetime.utcnow()
+        }}
+    )
+
+    return {'message': f'Job {new_status}', 'approval_status': new_status}
 
 @api_router.get("/jobs/{job_id}")
 async def get_job(job_id: str, user: Dict = Depends(get_current_user)):
