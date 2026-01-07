@@ -3,7 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Constants from 'expo-constants';
 
-const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
+const API_URL =
+  Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL ||
+  process.env.EXPO_PUBLIC_BACKEND_URL ||
+  'https://service-finder-254.preview.emergentagent.com';
 
 interface User {
   id: string;
@@ -20,7 +23,13 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
-  register: (username: string, password: string, email: string, userType: string, fullName?: string) => Promise<void>;
+  register: (
+    username: string,
+    password: string,
+    email: string,
+    userType: string,
+    fullName?: string
+  ) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -38,39 +47,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const loadStoredAuth = async () => {
-    try {
-      const storedToken = await AsyncStorage.getItem('auth_token');
-      const storedUser = await AsyncStorage.getItem('user');
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        // Refresh user data to get latest profile_completed status
-        await refreshUserData(storedToken);
-      }
-    } catch (error) {
-      console.error('Error loading auth:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const refreshUserData = async (authToken: string) => {
     try {
-      const response = await axios.get(`${API_URL}/api/auth/me`, {
+      const response = await axios.get(`${API_URL}/api/profile`, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
+
       const updatedUser = response.data;
-      setUser(updatedUser);
       await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
     } catch (error) {
       console.error('Error refreshing user:', error);
     }
   };
 
   const refreshUser = async () => {
-    if (token) {
-      await refreshUserData(token);
+    try {
+      const storedToken = await AsyncStorage.getItem('auth_token');
+      if (!storedToken) return;
+
+      setToken(storedToken);
+      await refreshUserData(storedToken);
+    } catch (error) {
+      console.error('Error refreshing user:', error);
     }
   };
 
@@ -78,13 +77,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await axios.post(`${API_URL}/api/auth/login`, { username, password });
       const { token: newToken, user: newUser } = response.data;
-      
+
       await AsyncStorage.setItem('auth_token', newToken);
       await AsyncStorage.setItem('user', JSON.stringify(newUser));
-      
+
       setToken(newToken);
       setUser(newUser);
-      
+
       // Refresh to get profile_completed status
       await refreshUserData(newToken);
     } catch (error: any) {
@@ -105,10 +104,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         email,
         user_type: userType,
-        full_name: fullName,
+        full_name: fullName
       });
+
       const { token: newToken, user: newUser } = response.data;
-      
+
       // Clear ALL onboarding progress for fresh start
       await AsyncStorage.removeItem('business_step1_progress');
       await AsyncStorage.removeItem('onboarding_step2_progress');
@@ -117,59 +117,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await AsyncStorage.removeItem('entrepreneur_step0_progress');
       await AsyncStorage.removeItem('entrepreneur_step1_progress');
       await AsyncStorage.removeItem('entrepreneur_step2_progress');
-      await AsyncStorage.removeItem('general_step1_progress');
-      await AsyncStorage.removeItem('general_step2_progress');
-      await AsyncStorage.removeItem('general_step3_progress');
-      
+      await AsyncStorage.removeItem('entrepreneur_step3_progress');
+      await AsyncStorage.removeItem('entrepreneur_step4_progress');
+
       await AsyncStorage.setItem('auth_token', newToken);
       await AsyncStorage.setItem('user', JSON.stringify(newUser));
-      
+
       setToken(newToken);
       setUser(newUser);
+
+      await refreshUserData(newToken);
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Registration failed');
     }
   };
 
   const logout = async () => {
-    // Clear auth data
-    await AsyncStorage.multiRemove([
-      'auth_token',
-      'user',
-      'profile_modal_dismissed_session',
-      // Only clear onboarding progress for incomplete users
-      // Keep onboarding_user_type_confirmed for completed users
-      'onboarding_tier',
-      'onboarding_promo_code',
-      'onboarding_trial_days',
-      'onboarding_entertainment_preferences',
-      'onboarding_profile_photo',
-      // Upgrade flags
-      'upgrade_from_tier',
-      'upgrade_to_tier',
-      // Business onboarding progress
-      'business_step1_progress',
-      'onboarding_step2_progress',
-      'business_step3_progress',
-      'business_step4_progress',
-      // Entrepreneur onboarding progress
-      'entrepreneur_step0_progress',
-      'entrepreneur_step1_progress',
-      'entrepreneur_step2_progress',
-      // General onboarding progress
-      'general_step1_progress',
-      'general_step2_progress',
-      'general_step3_progress'
-    ]);
-    
+    await AsyncStorage.removeItem('auth_token');
+    await AsyncStorage.removeItem('user');
     setToken(null);
     setUser(null);
-    
-    console.log('🚪 Logout complete - auth data cleared');
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        register,
+        logout,
+        refreshUser
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -177,8 +158,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

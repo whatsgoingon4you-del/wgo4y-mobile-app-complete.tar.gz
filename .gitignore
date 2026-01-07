@@ -89,3 +89,7 @@ android-sdk/ -e
 # Environment files
 *.env
 *.env.*
+
+# Metro / React Native cache
+frontend/.metro-cache/
+
