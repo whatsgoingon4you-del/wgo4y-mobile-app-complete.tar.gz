@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Request
+﻿from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -789,7 +789,7 @@ async def track_decline(worker_id: str, assignment_id: str, reason: Optional[str
             }}
         )
         result['removed'] = True
-        print(f"⚠️  Worker {worker_id} removed from in-house status (3 declines in 60 days)")
+        print(f"âš ï¸  Worker {worker_id} removed from in-house status (3 declines in 60 days)")
         
         # Create notification for worker
         import uuid
@@ -807,7 +807,7 @@ async def track_decline(worker_id: str, assignment_id: str, reason: Optional[str
     elif decline_count == 2:
         # Warning at 2 declines
         result['warning'] = True
-        print(f"⚠️  Worker {worker_id} at 2 declines - one more will remove in-house status")
+        print(f"âš ï¸  Worker {worker_id} at 2 declines - one more will remove in-house status")
         
         # Create warning notification
         import uuid
@@ -891,7 +891,7 @@ async def excuse_decline(worker_id: str, assignment_id: str, admin_user_id: str,
             'created_at': datetime.utcnow()
         })
     
-    print(f"✅ Decline excused for worker {worker_id}, new count: {new_count}")
+    print(f"âœ… Decline excused for worker {worker_id}, new count: {new_count}")
 
 async def reset_old_declines():
     """
@@ -917,7 +917,7 @@ async def reset_old_declines():
                 }}
             )
     
-    print(f"✅ Reset decline counts for {len(workers)} in-house workers")
+    print(f"âœ… Reset decline counts for {len(workers)} in-house workers")
 
 
 # ============= AUTH ROUTES =============
@@ -1608,7 +1608,7 @@ async def get_event(event_id: str):
     remaining = max(0, rsvp_limit - current_rsvps)
     
     # Determine status
-    is_almost_full = remaining > 0 and remaining <= (capacity * 0.2)  # ≤20% remaining
+    is_almost_full = remaining > 0 and remaining <= (capacity * 0.2)  # â‰¤20% remaining
     is_full = current_rsvps >= rsvp_limit
     
     return {
@@ -1765,7 +1765,7 @@ async def create_rsvp(event_id: str, user: Dict = Depends(get_current_user)):
     # Count current RSVPs for this event
     current_rsvps = await db.rsvps.count_documents({'event_id': event_id})
     
-    print(f"📊 Event capacity check: {current_rsvps}/{rsvp_limit} (capacity: {capacity}, overbooking: {overbooking_percentage}%)")
+    print(f"ðŸ“Š Event capacity check: {current_rsvps}/{rsvp_limit} (capacity: {capacity}, overbooking: {overbooking_percentage}%)")
     
     # Check if event is full
     if current_rsvps >= rsvp_limit:
@@ -1892,7 +1892,7 @@ async def cancel_rsvp(event_id: str, user: Dict = Depends(get_current_user)):
                 'created_at': datetime.utcnow()
             })
             
-            print(f"✅ Auto-promoted user {first_in_line['user_id']} from waitlist to RSVP for event {event_id}")
+            print(f"âœ… Auto-promoted user {first_in_line['user_id']} from waitlist to RSVP for event {event_id}")
     
     return {'message': 'RSVP cancelled'}
 
@@ -2489,7 +2489,7 @@ async def redeem_coupon(coupon_id: str, user: Dict = Depends(get_current_user)):
     # Get updated user redemption count
     new_user_count = user_redemptions + 1
     
-    print(f"✅ Coupon redeemed: {coupon['title']} by {user['_id']} ({new_user_count}/{usage_limit_per_user})")
+    print(f"âœ… Coupon redeemed: {coupon['title']} by {user['_id']} ({new_user_count}/{usage_limit_per_user})")
     
     return {
         'message': 'Coupon redeemed successfully',
@@ -2681,7 +2681,7 @@ async def enter_raffle(raffle_id: str, user: Dict = Depends(get_current_user)):
         # Create checkout session
         session = stripe_checkout.create_session(checkout_request)
         
-        print(f"✅ Stripe checkout session created: {session.id}")
+        print(f"âœ… Stripe checkout session created: {session.id}")
         
         # Return checkout URL for frontend to redirect
         return {
@@ -2691,9 +2691,9 @@ async def enter_raffle(raffle_id: str, user: Dict = Depends(get_current_user)):
         }
         
     except Exception as e:
-        print(f"❌ Stripe error: {str(e)}")
+        print(f"âŒ Stripe error: {str(e)}")
         # Fallback to mock payment for testing if Stripe fails
-        print(f"⚠️  Falling back to mock payment for testing")
+        print(f"âš ï¸  Falling back to mock payment for testing")
         
         mock_payment_id = f"mock_pay_{user['_id'][:8]}_{int(datetime.utcnow().timestamp())}"
         
@@ -2788,7 +2788,7 @@ async def confirm_raffle_entry(
             'user_id': user['_id']
         })
         
-        print(f"✅ Raffle entry confirmed via Stripe: User {user['_id']} → Entry #{next_entry_number}")
+        print(f"âœ… Raffle entry confirmed via Stripe: User {user['_id']} â†’ Entry #{next_entry_number}")
         
         return {
             'message': 'Successfully entered raffle',
@@ -2880,7 +2880,7 @@ async def draw_raffle_winner(raffle_id: str, user: Dict = Depends(get_current_us
         'created_at': datetime.utcnow()
     })
     
-    print(f"✅ Raffle winner selected: {winning_entry['user_id']} (Entry #{winning_entry['entry_number']})")
+    print(f"âœ… Raffle winner selected: {winning_entry['user_id']} (Entry #{winning_entry['entry_number']})")
     
     # Get winner info
     winner_user = await db.users.find_one({'_id': winning_entry['user_id']})
@@ -2941,7 +2941,7 @@ async def create_consulting_request(
             'created_at': datetime.utcnow()
         })
     
-    print(f"✅ Consulting request created: {request_id} from {owner_name}")
+    print(f"âœ… Consulting request created: {request_id} from {owner_name}")
     
     return {
         **request_dict,
@@ -3053,7 +3053,7 @@ async def update_consulting_request(
             'created_at': datetime.utcnow()
         })
         
-        print(f"✅ Consulting request {request_id} marked completed, notification sent")
+        print(f"âœ… Consulting request {request_id} marked completed, notification sent")
     
     # If status changed to in_progress, notify the requester
     if update_data.status == 'in_progress' and old_status != 'in_progress':
@@ -3069,7 +3069,7 @@ async def update_consulting_request(
             'created_at': datetime.utcnow()
         })
         
-        print(f"✅ Consulting request {request_id} marked in progress, notification sent")
+        print(f"âœ… Consulting request {request_id} marked in progress, notification sent")
     
     updated_request = await db.consulting_requests.find_one({'_id': request_id})
     return {**updated_request, 'id': updated_request['_id']}
@@ -3139,7 +3139,7 @@ async def send_consulting_reply(
         }
     )
     
-    print(f"✅ Consulting reply sent: {request_id}")
+    print(f"âœ… Consulting reply sent: {request_id}")
     
     return {
         'message': 'Reply sent successfully',
@@ -3189,7 +3189,7 @@ async def apply_as_worker(
             'created_at': datetime.utcnow()
         })
     
-    print(f"✅ Worker application: {user_name} as {application_data.role}")
+    print(f"âœ… Worker application: {user_name} as {application_data.role}")
     
     return {
         **worker_dict,
@@ -3375,7 +3375,7 @@ async def update_worker_status(
             'created_at': datetime.utcnow()
         })
         
-        print(f"✅ Worker approved: {worker_id}, notification sent")
+        print(f"âœ… Worker approved: {worker_id}, notification sent")
     
     return {'message': f'Worker status updated to {status}'}
 
@@ -3465,13 +3465,51 @@ async def request_worker_contact(
             'created_at': datetime.utcnow()
         })
     
-    print(f"✅ Contact request: {requester_name} → Worker {worker_id}")
+    print(f"âœ… Contact request: {requester_name} â†’ Worker {worker_id}")
     
     return {
         'message': 'Contact request sent successfully',
         'contact_id': contact_id
     }
 
+
+
+# ============= JOB BOARD ROUTES =============
+
+    notif_id = str(uuid.uuid4())
+    await db.notifications.insert_one({
+        '_id': notif_id,
+        'user_id': worker['user_id'],
+        'type': 'WORKER_CONTACT_REQUEST',
+        'worker_id': worker_id,
+        'requester_id': user['_id'],  # Add requester ID for navigation
+        'title': 'Someone wants to work with you!',
+        'message': f"{requester_name} is interested in working with you. Check your WGO4Y messages for details.",
+        'is_read': False,
+        'created_at': datetime.utcnow()
+    })
+
+    # Also notify admins
+    admins = await db.users.find({'is_admin': True}).to_list(100)
+    for admin in admins:
+        admin_notif_id = str(uuid.uuid4())
+        await db.notifications.insert_one({
+            '_id': admin_notif_id,
+            'user_id': admin['_id'],
+            'type': 'WORKER_CONTACT_REQUEST',
+            'worker_id': worker_id,
+            'title': 'Worker contact request',
+            'message': f"{requester_name} requested contact with {worker['role']} worker in {worker['city']}, {worker['state']}",
+            'is_read': False,
+            'created_at': datetime.utcnow()
+        })
+
+    print(f"✓ Contact request: {requester_name} → Worker {worker_id}")
+
+    return {
+        'message': 'Contact request sent successfully',
+        'contact_id': contact_id
+    }
 
 
 # ============= JOB BOARD ROUTES =============
@@ -3485,13 +3523,13 @@ async def create_job(
     # Only businesses and entrepreneurs can post jobs
     if user.get('user_type') not in ['business', 'entrepreneur']:
         raise HTTPException(status_code=403, detail="Only venues and entrepreneurs can post jobs")
-    
+
     # Check if user has premium tier
     require_premium_tier(user, "Job Board")
-    
+
     import uuid
     job_id = str(uuid.uuid4())
-    
+
     job_dict = job_data.dict()
     job_dict['_id'] = job_id
     job_dict['owner_id'] = user['_id']
@@ -3499,24 +3537,24 @@ async def create_job(
     job_dict['owner_type'] = user.get('user_type')
     job_dict['status'] = 'open'
 
-# Admin approval gate for public Job Board
-job_dict['approval_status'] = 'pending'  # pending, approved, rejected
-job_dict['approved_at'] = None
-job_dict['approved_by'] = None
+    # Admin approval gate for public Job Board
+    job_dict['approval_status'] = 'pending'  # pending, approved, rejected
+    job_dict['approved_at'] = None
+    job_dict['approved_by'] = None
 
-job_dict['created_at'] = datetime.utcnow()
-job_dict['updated_at'] = datetime.utcnow()
+    job_dict['created_at'] = datetime.utcnow()
+    job_dict['updated_at'] = datetime.utcnow()
 
-    
     await db.job_postings.insert_one(job_dict)
-    
-    print(f"✅ Job created: {job_data.title} by {job_dict['owner_name']}")
-    
+
+    print(f"Job created: {job_data.title} by {job_dict['owner_name']}")
+
     return {
         **job_dict,
         'id': job_id,
         'message': 'Job posted successfully'
     }
+
 
 @api_router.get("/jobs")
 async def get_jobs(
@@ -3526,18 +3564,19 @@ async def get_jobs(
     user: Dict = Depends(get_current_user)
 ):
     """Get job postings - Workers see all open jobs, Businesses see their own jobs"""
+
     query = {}
-    
+
     # If user is a worker (has worker profile), show all open jobs
     worker_profile = await db.worker_profiles.find_one({
         'user_id': user['_id'],
         'status': 'approved'
     })
-    
+
     if worker_profile:
-    # Worker view: show only open + admin-approved jobs
-    query['status'] = 'open'
-    query['approval_status'] = 'approved'
+        # Worker view: show only open + admin-approved jobs
+        query['status'] = 'open'
+        query['approval_status'] = 'approved'
     elif user.get('user_type') in ['business', 'entrepreneur']:
         # Business/Entrepreneur view: show their own jobs (any status)
         require_premium_tier(user, "Job Board")
@@ -3545,7 +3584,7 @@ async def get_jobs(
     else:
         # GP users cannot access
         raise HTTPException(status_code=403, detail="Job Board is not available for General Public users")
-    
+
     # Apply filters
     if role:
         query['role'] = role
@@ -3553,9 +3592,50 @@ async def get_jobs(
         query['state'] = state
     if status and user.get('user_type') in ['business', 'entrepreneur']:
         query['status'] = status
-    
+
     jobs = await db.job_postings.find(query).sort('created_at', -1).to_list(1000)
-    
+
+    # Enrich with application count
+
+@api_router.get("/jobs")
+async def get_jobs(
+    role: Optional[str] = None,
+    state: Optional[str] = None,
+    status: Optional[str] = None,
+    user: Dict = Depends(get_current_user)
+):
+    """Get job postings - Workers see all open jobs, Businesses see their own jobs"""
+
+    query = {}
+
+    # If user is a worker (has worker profile), show all open jobs
+    worker_profile = await db.worker_profiles.find_one({
+        'user_id': user['_id'],
+        'status': 'approved'
+    })
+
+    if worker_profile:
+        # Worker view: show only open + admin-approved jobs
+        query['status'] = 'open'
+        query['approval_status'] = 'approved'
+    elif user.get('user_type') in ['business', 'entrepreneur']:
+        # Business/Entrepreneur view: show their own jobs (any status)
+        require_premium_tier(user, "Job Board")
+        query['owner_id'] = user['_id']
+    else:
+        # GP users cannot access
+        raise HTTPException(status_code=403, detail="Job Board is not available for General Public users")
+
+    # Apply filters
+    if role:
+        query['role'] = role
+    if state:
+        query['state'] = state
+    if status and user.get('user_type') in ['business', 'entrepreneur']:
+        query['status'] = status
+
+    jobs = await db.job_postings.find(query).sort('created_at', -1).to_list(1000)
+
     # Enrich with application count
     enriched = []
     for job in jobs:
@@ -3565,11 +3645,13 @@ async def get_jobs(
             'id': job['_id'],
             'application_count': app_count
         })
-    
+
     return enriched
+
 
 class JobApprovalUpdate(BaseModel):
     approved: bool = True
+
 
 @api_router.get("/admin/jobs/pending")
 async def admin_get_pending_jobs(user: Dict = Depends(get_current_user)):
@@ -3589,6 +3671,7 @@ async def admin_get_pending_jobs(user: Dict = Depends(get_current_user)):
         })
 
     return enriched
+
 
 @api_router.post("/admin/jobs/{job_id}/approve")
 async def admin_approve_job(job_id: str, update: JobApprovalUpdate, user: Dict = Depends(get_current_user)):
@@ -3621,25 +3704,26 @@ async def admin_approve_job(job_id: str, update: JobApprovalUpdate, user: Dict =
 
     return {'message': f'Job {new_status}', 'approval_status': new_status}
 
+
 @api_router.get("/jobs/{job_id}")
 async def get_job(job_id: str, user: Dict = Depends(get_current_user)):
     """Get job details"""
     job = await db.job_postings.find_one({'_id': job_id})
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    
+
     # Get application count
     app_count = await db.job_applications.count_documents({'job_id': job_id})
-    
+
     # If user is the owner, also get applicant details
     applicants = []
     if job['owner_id'] == user['_id']:
         applications = await db.job_applications.find({'job_id': job_id}).sort('created_at', -1).to_list(1000)
-        
+
         for app in applications:
             worker = await db.worker_profiles.find_one({'user_id': app['worker_id']})
             worker_user = await db.users.find_one({'_id': app['worker_id']})
-            
+
             if worker and worker_user:
                 applicants.append({
                     'application_id': app['_id'],
@@ -3651,13 +3735,14 @@ async def get_job(job_id: str, user: Dict = Depends(get_current_user)):
                     'applied_at': app.get('created_at'),
                     'profile_photo': worker_user.get('profile_photo')
                 })
-    
+
     return {
         **job,
         'id': job['_id'],
         'application_count': app_count,
         'applicants': applicants
     }
+
 
 @api_router.post("/jobs/{job_id}/apply")
 async def apply_to_job(
@@ -3671,34 +3756,34 @@ async def apply_to_job(
         'user_id': user['_id'],
         'status': 'approved'
     })
-    
+
     if not worker_profile:
         raise HTTPException(
             status_code=403,
             detail="Only approved workers can apply to jobs. Please apply to the Worker Network first."
         )
-    
+
     # Check if job exists
     job = await db.job_postings.find_one({'_id': job_id})
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    
+
     if job['status'] != 'open':
         raise HTTPException(status_code=400, detail="This job is no longer accepting applications")
-    
+
     # Check if already applied
     existing = await db.job_applications.find_one({
         'job_id': job_id,
         'worker_id': user['_id']
     })
-    
+
     if existing:
         raise HTTPException(status_code=400, detail="You have already applied to this job")
-    
+
     # Create application
     import uuid
     app_id = str(uuid.uuid4())
-    
+
     application_dict = {
         '_id': app_id,
         'job_id': job_id,
@@ -3708,30 +3793,14 @@ async def apply_to_job(
         'status': 'pending',
         'created_at': datetime.utcnow()
     }
-    
+
     await db.job_applications.insert_one(application_dict)
-    
-    # Notify job owner
-    worker_name = worker_profile.get('stage_name') or user.get('full_name') or user.get('username')
-    
-    notif_id = str(uuid.uuid4())
-    await db.notifications.insert_one({
-        '_id': notif_id,
-        'user_id': job['owner_id'],
-        'type': 'JOB_APPLICATION',
-        'job_id': job_id,
-        'title': f"New application for {job['title']}",
-        'message': f"{worker_name} has applied for your {job['role']} position.",
-        'is_read': False,
-        'created_at': datetime.utcnow()
-    })
-    
-    print(f"✅ Job application: {worker_name} → Job {job_id}")
-    
+
     return {
         'message': 'Application submitted successfully',
         'application_id': app_id
     }
+
 
 @api_router.delete("/jobs/{job_id}")
 async def delete_job(job_id: str, user: Dict = Depends(get_current_user)):
@@ -3739,13 +3808,14 @@ async def delete_job(job_id: str, user: Dict = Depends(get_current_user)):
     job = await db.job_postings.find_one({'_id': job_id})
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    
+
     if job['owner_id'] != user['_id']:
         raise HTTPException(status_code=403, detail="You can only delete your own jobs")
-    
+
     await db.job_postings.delete_one({'_id': job_id})
-    
+
     return {'message': 'Job deleted successfully'}
+
 
 @api_router.patch("/jobs/{job_id}/status")
 async def update_job_status(
@@ -3757,475 +3827,16 @@ async def update_job_status(
     job = await db.job_postings.find_one({'_id': job_id})
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    
+
     if job['owner_id'] != user['_id']:
         raise HTTPException(status_code=403, detail="You can only update your own jobs")
-    
+
     await db.job_postings.update_one(
         {'_id': job_id},
         {'$set': {'status': status, 'updated_at': datetime.utcnow()}}
     )
-    
+
     return {'message': f'Job status updated to {status}'}
-
-
-@api_router.get("/jobs/{job_id}/applicants")
-async def get_job_applicants(
-    job_id: str,
-    user: Dict = Depends(get_current_user)
-):
-    """Get all applicants for a job (owner only)"""
-    # Check if job exists and user is owner
-    job = await db.job_postings.find_one({'_id': job_id})
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    
-    if job['owner_id'] != user['_id']:
-        raise HTTPException(status_code=403, detail="You can only view applicants for your own jobs")
-    
-    # Get all applications for this job
-    applications = []
-    async for app in db.job_applications.find({'job_id': job_id}).sort('created_at', -1):
-        # Get worker profile details
-        worker_profile = await db.worker_profiles.find_one({'_id': app['worker_profile_id']})
-        worker = await db.users.find_one({'_id': app['worker_id']})
-        
-        if worker_profile and worker:
-            applications.append({
-                'id': app['_id'],
-                'job_id': app['job_id'],
-                'worker_id': app['worker_id'],
-                'worker_name': worker_profile.get('stage_name') or worker.get('full_name') or worker.get('username'),
-                'worker_role': worker_profile.get('role'),
-                'worker_services': worker_profile.get('services', []),
-                'note': app.get('note', ''),
-                'status': app['status'],
-                'created_at': app['created_at'].isoformat(),
-                'worker_profile': {
-                    'stage_name': worker_profile.get('stage_name'),
-                    'role': worker_profile.get('role'),
-                    'services': worker_profile.get('services', []),
-                    'experience': worker_profile.get('experience'),
-                    'location': worker_profile.get('location'),
-                    'photo_url': worker_profile.get('photo_url')
-                }
-            })
-    
-    return {
-        'job': {
-            'id': job['_id'],
-            'title': job['title'],
-            'role': job['role'],
-            'status': job['status']
-        },
-        'applicants': applications,
-        'total_count': len(applications)
-    }
-
-@api_router.get("/jobs/my/posted")
-async def get_my_posted_jobs(
-    user: Dict = Depends(get_current_user)
-):
-    """Get all jobs posted by current user"""
-    if user.get('user_type') not in ['business', 'entrepreneur']:
-        raise HTTPException(status_code=403, detail="Only businesses and entrepreneurs can view posted jobs")
-    
-    jobs = []
-    async for job in db.job_postings.find({'owner_id': user['_id']}).sort('created_at', -1):
-        # Count applications for each job
-        app_count = await db.job_applications.count_documents({'job_id': job['_id']})
-        
-        # Build location string from city and state
-        location = f"{job.get('city', '')}, {job.get('state', '')}"
-        
-        jobs.append({
-            'id': job['_id'],
-            'title': job['title'],
-            'role': job['role'],
-            'event_date': job.get('event_date'),
-            'city': job.get('city'),
-            'state': job.get('state'),
-            'location': location,
-            'description': job['description'],
-            'pay': job.get('pay'),
-            'status': job['status'],
-            'applicant_count': app_count,
-            'created_at': job['created_at'].isoformat(),
-            'updated_at': job['updated_at'].isoformat()
-        })
-    
-    return {
-        'jobs': jobs,
-        'total_count': len(jobs)
-    }
-
-@api_router.get("/jobs/my/applications")
-async def get_my_applications(
-    user: Dict = Depends(get_current_user)
-):
-    """Get all job applications submitted by current user"""
-    # Check if user has worker profile
-    worker_profile = await db.worker_profiles.find_one({'user_id': user['_id']})
-    if not worker_profile:
-        return {'applications': [], 'total_count': 0}
-    
-    applications = []
-    async for app in db.job_applications.find({'worker_id': user['_id']}).sort('created_at', -1):
-        # Get job details
-        job = await db.job_postings.find_one({'_id': app['job_id']})
-        if job:
-            # Build location string from city and state
-            location = f"{job.get('city', '')}, {job.get('state', '')}"
-            
-            applications.append({
-                'id': app['_id'],
-                'job': {
-                    'id': job['_id'],
-                    'title': job['title'],
-                    'role': job['role'],
-                    'owner_name': job['owner_name'],
-                    'event_date': job.get('event_date'),
-                    'city': job.get('city'),
-                    'state': job.get('state'),
-                    'location': location,
-                    'pay': job.get('pay'),
-                    'status': job['status']
-                },
-                'note': app.get('note', ''),
-                'status': app['status'],
-                'created_at': app['created_at'].isoformat()
-            })
-    
-    return {
-        'applications': applications,
-        'total_count': len(applications)
-    }
-
-@api_router.patch("/jobs/applications/{application_id}/status")
-async def update_application_status(
-    application_id: str,
-    status: str,
-    user: Dict = Depends(get_current_user)
-):
-    """Update application status (job owner only)"""
-    if status not in ['pending', 'accepted', 'rejected']:
-        raise HTTPException(status_code=400, detail="Invalid status. Must be: pending, accepted, or rejected")
-    
-    # Get application
-    application = await db.job_applications.find_one({'_id': application_id})
-    if not application:
-        raise HTTPException(status_code=404, detail="Application not found")
-    
-    # Check if user owns the job
-    job = await db.job_postings.find_one({'_id': application['job_id']})
-    if not job or job['owner_id'] != user['_id']:
-        raise HTTPException(status_code=403, detail="You can only update applications for your own jobs")
-    
-    # Update status
-    await db.job_applications.update_one(
-        {'_id': application_id},
-        {'$set': {'status': status}}
-    )
-    
-    # Notify worker
-    import uuid
-    notif_id = str(uuid.uuid4())
-    status_message = {
-        'accepted': 'Your application has been accepted!',
-        'rejected': 'Your application was not selected this time.',
-        'pending': 'Your application status has been updated.'
-    }
-    
-    await db.notifications.insert_one({
-        '_id': notif_id,
-        'user_id': application['worker_id'],
-        'type': 'JOB_APPLICATION_UPDATE',
-        'job_id': application['job_id'],
-        'title': f"Application Update: {job['title']}",
-        'message': status_message.get(status, 'Your application status has changed.'),
-        'is_read': False,
-        'created_at': datetime.utcnow()
-    })
-    
-    return {
-        'message': f'Application status updated to {status}',
-        'application_id': application_id,
-        'new_status': status
-    }
-
-# ============= NOTIFICATION ROUTES =============
-
-@api_router.get("/notifications")
-async def get_notifications(
-    user: Dict = Depends(get_current_user),
-    unread_only: bool = False
-):
-    """Get notifications for current user"""
-    query = {'user_id': user['_id']}
-    
-    if unread_only:
-        query['is_read'] = False
-    
-    notifications = await db.notifications.find(query).sort('created_at', -1).to_list(100)
-    
-    # Enrich with event titles for display
-    enriched = []
-    for notif in notifications:
-        event_id = notif.get('event_id')
-        raffle_id = notif.get('raffle_id')
-        consulting_request_id = notif.get('consulting_request_id')
-        worker_id = notif.get('worker_id')
-        event_title = None
-        
-        if event_id:
-            event = await db.events.find_one({'_id': event_id})
-            if event:
-                event_title = event.get('title', 'Event')
-        
-        enriched.append({
-            'id': notif['_id'],
-            'type': notif['type'],
-            'event_id': event_id,
-            'raffle_id': raffle_id,
-            'consulting_request_id': consulting_request_id,
-            'worker_id': worker_id,
-            'event_title': event_title or notif.get('title', 'Event'),
-            'title': notif.get('title', ''),
-            'message': notif.get('message', ''),
-            'is_read': notif.get('is_read', False),
-            'created_at': notif['created_at']
-        })
-    
-    return enriched
-
-@api_router.patch("/notifications/{notification_id}/read")
-async def mark_notification_read(
-    notification_id: str,
-    user: Dict = Depends(get_current_user)
-):
-    """Mark a notification as read"""
-    result = await db.notifications.update_one(
-        {'_id': notification_id, 'user_id': user['_id']},
-        {'$set': {'is_read': True}}
-    )
-    
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Notification not found")
-    
-    return {'message': 'Notification marked as read'}
-
-@api_router.delete("/notifications/{notification_id}")
-async def delete_notification(
-    notification_id: str,
-    user: Dict = Depends(get_current_user)
-):
-    """Delete a notification"""
-    result = await db.notifications.delete_one({
-        '_id': notification_id,
-        'user_id': user['_id']
-    })
-    
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Notification not found")
-    
-    return {'message': 'Notification deleted'}
-
-# ============= MESSAGE ROUTES =============
-
-@api_router.get("/messages")
-async def get_messages(user: Dict = Depends(get_current_user)):
-    messages = await db.messages.find({
-        '$or': [
-            {'from_user': user['_id']},
-            {'to_user': user['_id']}
-        ]
-    }).sort('timestamp', -1).to_list(1000)
-    return [{**msg, 'id': msg['_id']} for msg in messages]
-
-@api_router.get("/messages/contacts")
-async def get_contacts(user: Dict = Depends(get_current_user)):
-    """Get list of contacts for messaging - Premium tier only"""
-    # Check if user has premium tier
-    require_premium_tier(user, "Messaging")
-    
-    # Get archived conversation IDs for this user
-    archived = await db.archived_conversations.find({
-        'user_id': user['_id']
-    }).to_list(1000)
-    archived_contact_ids = {a['contact_id'] for a in archived}
-    
-    # Get unique users who have messaged with current user
-    messages = await db.messages.find({
-        '$or': [
-            {'from_user': user['_id']},
-            {'to_user': user['_id']}
-        ]
-    }).to_list(1000)
-    
-    contact_ids = set()
-    for msg in messages:
-        if msg['from_user'] != user['_id']:
-            contact_ids.add(msg['from_user'])
-        if msg['to_user'] != user['_id']:
-            contact_ids.add(msg['to_user'])
-    
-    # Get all paid members (not basic tier) as potential contacts
-    paid_users = await db.users.find({
-        '_id': {'$ne': user['_id']},  # Exclude current user
-        'membership_tier': {'$nin': ['basic', None]}  # Only paid members
-    }).to_list(1000)
-    
-
-    # Add paid users to contact list
-    for paid_user in paid_users:
-        contact_ids.add(paid_user['_id'])
-    
-    contacts = []
-    for contact_id in contact_ids:
-        # Skip archived conversations
-        if contact_id in archived_contact_ids:
-            continue
-            
-        contact_user = await db.users.find_one({'_id': contact_id})
-        if contact_user:
-            # Check if there are any messages with this contact
-            has_messages = contact_id in {msg['from_user'] for msg in messages} or \
-                          contact_id in {msg['to_user'] for msg in messages}
-            
-            contacts.append({
-                'id': contact_user['_id'],
-                'username': contact_user['username'],
-                'full_name': contact_user.get('full_name', contact_user['username']),
-                'user_type': contact_user.get('user_type', 'general_public'),
-                'membership_tier': contact_user.get('membership_tier', 'basic'),
-                'profile_photo': contact_user.get('profile_photo') or contact_user.get('business_logo'),  # Use business_logo as fallback
-                'has_messages': has_messages  # Flag to show if they've messaged before
-            })
-    
-    # Sort contacts: users with messages first, then alphabetically
-    contacts.sort(key=lambda x: (not x['has_messages'], x['full_name'].lower()))
-    
-    return contacts
-
-@api_router.get("/messages/preview/{contact_id}")
-async def get_message_preview(contact_id: str, user: Dict = Depends(get_current_user)):
-    """Get last message with a contact WITHOUT marking as read (for conversation list preview)"""
-    messages = await db.messages.find({
-        '$or': [
-            {'from_user': user['_id'], 'to_user': contact_id},
-            {'from_user': contact_id, 'to_user': user['_id']}
-        ]
-    }).sort('timestamp', -1).limit(1).to_list(1)
-    
-    if messages:
-        last_msg = messages[0]
-        return {
-            'content': last_msg['content'],
-            'timestamp': last_msg['timestamp'],
-            'from_user': last_msg['from_user']
-        }
-    
-    return {'content': '', 'timestamp': datetime.utcnow(), 'from_user': ''}
-
-@api_router.post("/messages")
-async def send_message(message_data: MessageCreate, user: Dict = Depends(get_current_user)):
-    """Send a message to another user - Premium tier only"""
-    import uuid
-    
-    # Check if sender has premium tier
-    require_premium_tier(user, "Messaging")
-    
-    # Check if recipient has premium tier (cannot send to Basic users)
-    recipient = await db.users.find_one({'_id': message_data.to_user})
-    if not recipient:
-        raise HTTPException(status_code=404, detail="Recipient not found")
-    
-    if not has_premium_tier(recipient):
-        recipient_tier = recipient.get('membership_tier', 'basic')
-        raise HTTPException(
-            status_code=403,
-            detail=f"Cannot send message to Basic tier user. The recipient (tier: {recipient_tier}) does not have messaging access."
-        )
-    
-    message_id = str(uuid.uuid4())
-    message_dict = {
-        '_id': message_id,
-        'from_user': user['_id'],
-        'to_user': message_data.to_user,
-        'content': message_data.content,
-        'read': False,
-        'timestamp': datetime.utcnow()
-    }
-    await db.messages.insert_one(message_dict)
-    
-    # Un-archive conversation: Remove any archive records when new message is sent
-    # This ensures conversation reappears for both users
-    await db.archived_conversations.delete_many({
-        '$or': [
-            {'user_id': user['_id'], 'contact_id': message_data.to_user},
-            {'user_id': message_data.to_user, 'contact_id': user['_id']}
-        ]
-    })
-    
-    return {**message_dict, 'id': message_id}
-
-@api_router.get("/messages/thread/{contact_id}")
-async def get_message_thread(contact_id: str, user: Dict = Depends(get_current_user)):
-    """Get message thread with a contact - Premium tier only"""
-    # Check if user has premium tier
-    require_premium_tier(user, "Messaging")
-    
-    messages = await db.messages.find({
-        '$or': [
-            {'from_user': user['_id'], 'to_user': contact_id},
-            {'from_user': contact_id, 'to_user': user['_id']}
-        ]
-    }).sort('timestamp', 1).to_list(1000)
-    
-    # Mark messages as read
-    await db.messages.update_many(
-        {'from_user': contact_id, 'to_user': user['_id'], 'read': False},
-        {'$set': {'read': True}}
-    )
-    
-    return [{**msg, 'id': msg['_id']} for msg in messages]
-
-@api_router.get("/messages/unread-count")
-async def get_unread_count(user: Dict = Depends(get_current_user)):
-    """Get count of unread messages for current user"""
-    unread_count = await db.messages.count_documents({
-        'to_user': user['_id'],
-        'read': False
-    })
-    return {'count': unread_count}
-
-@api_router.get("/messages/unread-by-contact")
-async def get_unread_by_contact(user: Dict = Depends(get_current_user)):
-    """Get unread message counts grouped by contact"""
-    # Get all unread messages sent TO current user
-    unread_messages = await db.messages.find({
-        'to_user': user['_id'],
-        'read': False
-    }).to_list(1000)
-    
-    # Group by sender
-    unread_by_contact = {}
-    for msg in unread_messages:
-        sender_id = msg['from_user']
-        if sender_id not in unread_by_contact:
-            unread_by_contact[sender_id] = {
-                'count': 0,
-                'last_message': msg['content'],
-                'timestamp': msg['timestamp']
-            }
-        unread_by_contact[sender_id]['count'] += 1
-        # Keep the most recent message
-        if msg['timestamp'] > unread_by_contact[sender_id]['timestamp']:
-            unread_by_contact[sender_id]['last_message'] = msg['content']
-            unread_by_contact[sender_id]['timestamp'] = msg['timestamp']
-    
-    return unread_by_contact
-
 
 
 @api_router.post("/messages/archive/{contact_id}")
@@ -4933,7 +4544,7 @@ async def add_in_house_worker(worker_id: str, user: Dict = Depends(get_current_u
         'created_at': datetime.utcnow()
     })
     
-    print(f"✅ Worker {worker_id} added to in-house status by admin {user['_id']}")
+    print(f"âœ… Worker {worker_id} added to in-house status by admin {user['_id']}")
     
     return {
         'message': 'Worker added to in-house status successfully',
@@ -4982,7 +4593,7 @@ async def remove_in_house_worker(worker_id: str, user: Dict = Depends(get_curren
         'created_at': datetime.utcnow()
     })
     
-    print(f"✅ Worker {worker_id} removed from in-house status by admin {user['_id']}")
+    print(f"âœ… Worker {worker_id} removed from in-house status by admin {user['_id']}")
     
     return {
         'message': 'Worker removed from in-house status successfully',
@@ -5255,7 +4866,7 @@ async def assign_workers(
             'created_at': datetime.utcnow()
         })
     
-    print(f"✅ Assigned {len(assignment_data.worker_assignments)} workers to event {event_id}")
+    print(f"âœ… Assigned {len(assignment_data.worker_assignments)} workers to event {event_id}")
     
     return {
         'message': 'Workers assigned successfully',
@@ -5335,7 +4946,7 @@ async def reassign_worker(
         }}
     )
     
-    print(f"✅ Reassigned {role} from {old_worker_id} to {new_worker_id} for event {event_id}")
+    print(f"âœ… Reassigned {role} from {old_worker_id} to {new_worker_id} for event {event_id}")
     
     return {
         'message': 'Worker reassigned successfully',
@@ -5399,7 +5010,7 @@ async def update_event_status(
             'created_at': datetime.utcnow()
         })
     
-    print(f"✅ Updated event {event_id} status to {status_data.status}")
+    print(f"âœ… Updated event {event_id} status to {status_data.status}")
     
     return {
         'message': 'Event status updated successfully',
@@ -5441,7 +5052,7 @@ async def excuse_worker_decline(
     # Excuse the decline
     await excuse_decline(worker_id, assignment_id, user['_id'], excuse_data.excuse_reason)
     
-    print(f"✅ Admin {user['_id']} excused decline for worker {worker_id}, assignment {assignment_id}")
+    print(f"âœ… Admin {user['_id']} excused decline for worker {worker_id}, assignment {assignment_id}")
     
     return {
         'message': 'Decline excused successfully',
@@ -5498,7 +5109,7 @@ async def create_managed_event_request(
             'created_at': datetime.utcnow()
         })
     
-    print(f"✅ Managed event request created: {request_id} by {user['_id']}")
+    print(f"âœ… Managed event request created: {request_id} by {user['_id']}")
     
     return {
         'message': 'Managed event request submitted successfully',
@@ -5612,7 +5223,7 @@ async def submit_business_feedback(
         {'$set': {'business_feedback': feedback}}
     )
     
-    print(f"✅ Business feedback submitted for event {event_id}")
+    print(f"âœ… Business feedback submitted for event {event_id}")
     
     return {
         'message': 'Feedback submitted successfully',
@@ -5800,7 +5411,7 @@ async def accept_assignment(assignment_id: str, user: Dict = Depends(get_current
             'created_at': datetime.utcnow()
         })
     
-    print(f"✅ Worker {worker['_id']} accepted assignment for event {request['_id']}")
+    print(f"âœ… Worker {worker['_id']} accepted assignment for event {request['_id']}")
     
     return {
         'message': 'Assignment accepted successfully',
@@ -5875,7 +5486,7 @@ async def decline_assignment(
             'created_at': datetime.utcnow()
         })
     
-    print(f"⚠️  Worker {worker['_id']} declined assignment for event {request['_id']}")
+    print(f"âš ï¸  Worker {worker['_id']} declined assignment for event {request['_id']}")
     
     return {
         'message': 'Assignment declined',
@@ -5960,3 +5571,6 @@ logger = logging.getLogger(__name__)
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+
+
