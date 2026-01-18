@@ -13,7 +13,7 @@ import bcrypt
 import jwt
 import stripe
 import base64
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+# from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 from categories_data import (
     VENUE_CATEGORIES, 
     ENTREPRENEUR_CATEGORIES, 
